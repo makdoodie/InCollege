@@ -1,24 +1,31 @@
 import sqlite3
 import re
+import hashlib
 
 class MenuMediator:
     def __init__(self):
       self.selections = {}
+      self.skillSelections = {}
     ## Set Each Menu Item for the  
     def setSelection(self,hotKey,selection):
       self.selections[hotKey] = selection
-    ## Displays Each Set Menu Item System Class performs the action  
+    def setSkillSelection(self,hotKey,selection):
+      self.skillSelections[hotKey] = selection
+    ## Displays Each Set Menu Item; System Class performs the action  
     def displayMainMenu(self):
-      for hotKey,selection in self.selections:
+      for hotKey,selection in self.selections.items():
+        print("["+hotKey+"] "+ selection['label'])
+      print("[0] Exit")
+    def displaySkillMenu(self):
+      for hotKey,selection in self.skillSelections.items():
         print("["+hotKey+"] "+ selection['label'])
       print("[0] Exit")
       
     def startEnviroment(self):
       while True:
         self.displayMainMenu()
-        selection = input("Please, make a selection")
+        selection = input("Please, make a selection\n")
         if(selection == '0'):
-          print("Logging Out...")
           print("Exiting")
           break
         if selection in self.selections:
@@ -32,13 +39,43 @@ class System:
   def __init__(self,loggedOn): #create and connect to db
     self.conn = sqlite3.connect("accounts.db") #establishes connection to SQLite database called accounts
     self.cursor = self.conn.cursor() #creates cursor object which is later used to execute SQL queries
-    self.cursor.execute("CREATE TABLE IF NOT EXISTS accounts (username varchar2(25), password varchar2(12))") #execute method and cursor object are used to create table if one does not exist
+    self.cursor.execute("CREATE TABLE IF NOT EXISTS accounts (username varchar2(25) PRIMARY KEY, password varchar2(12))") #execute method and cursor object are used to create table if one does not exist
     self.conn.commit() #commit method used to save changes
     self.loggedOn = loggedOn
     self.mediator = MenuMediator()
-    
-  def __del__(self,loggedOn): #closes connection to db
+
+  def encryption(self, password):
+    sha256 = hashlib.sha256()
+    sha256.update(password.encode('utf-8'))
+    hashed_pass = sha256.hexdigest()
+    return hashed_pass
+
+  def __del__(self, loggedOn): #closes connection to db
     self.conn.close() #closes connection to database
+
+  def deleteTable(self):
+    confirm = input("Are you sure you want to delete the current accouns in the database? This operation cannot be undone. (Y/N): ")
+    if confirm.upper() == "Y":
+      self.cursor.execute("DROP TABLE IF EXISTS accounts")
+      self.conn.commit()
+      print("Table deleted successfully.")
+    else:
+      print("Deletion operation canceled.")
+      
+  def printTable(self):
+    self.cursor.execute("SELECT * FROM accounts")
+    rows = self.cursor.fetchall()
+    if rows:
+      print("Username\tPassword")
+      for row in rows:
+        print(f"{row[0]}\t\t{row[1]}")
+    else:
+        print("No records found in the table.")
+
+  def countRows(self):
+    self.cursor.execute("SELECT COUNT(*) FROM accounts")
+    count = self.cursor.fetchone()[0]
+    return count
 
   def validatePassword(self, password,password_check): #validate password
     if(password != password_check):
@@ -74,21 +111,28 @@ class System:
       #? is placeholder for username
       account = self.cursor.fetchone() #fetches first row which query returns
       if account: #if the username exists, then we check that the password in the database matches the password the user inputted
-        # Password needs encrypted/decrypted here
-        if account[2] == password:
+        hashed_inputpass = self.encryption(password)
+        if hashed_inputpass == account[1]:
           print("You have successfully logged in!")
           return True
         else:
           print("Invalid username/password, try again!")
+          username = input("Enter Username: ")
+          password = input("Enter Password: ")
+          self.loggedOn = self.login(username, password)
+          return True
       else:
         print("Account not found, check credentials.")
       return False
       
   def register(self, username, password, password_check):
+    if self.countRows() >= 5:
+      print("Maximum number of accounts created!")
+      return False
     ## Validate Inputs
     if self.validatePassword(password,password_check) and self.validateUserName(username):
-      #Encrypt Password here
-      self.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (username, password))
+      encrypted_pass = self.encryption(password)
+      self.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (username, encrypted_pass))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
       return True
@@ -96,10 +140,9 @@ class System:
     
   def loginMenu(self):
     print("Welcome to the InCollege sign in page!\n")
-    choice = input("[1] Login [2] Create Account [0] Exit\n")
+    choice = input("[0] Exit \n[1] Login \n[2] Create Account\n")
     while(True):
         if(choice == '0'):
-          print("Ciao")
           break
         if not(self.loggedOn):
           if(choice == "1"):
@@ -115,17 +158,62 @@ class System:
             passwordCheck = input("Confirm Password: ")
             registered = self.register(username, password, passwordCheck)
             if(registered == True):
-              print("Log In:\n")
-              self.loggedOn = self.login(username, password)
+              choice = "1"
+            else:
+              choice = input("[0] Exit \n[1] Login \n[2] Create Account\n")
+          elif(choice == "8"):
+            self.deleteTable()
+            choice = input("[1] Login [2] Create Account [0] Exit\n")
+          elif(choice == "9"):
+            self.printTable()
+            choice = input("[1] Login [2] Create Account [0] Exit\n")
           else:
             print("Incorrect input. Please try again.")
             choice = input("[1] Login [2] Create Account [0] Exit\n")
         else:
           break
   def mainMenu(self):
-      self.mediator.setSelection('1',{'label':'Jobs','action':self.jobsMenu})
+      self.mediator.setSelection('1',{'label':'Job Search','action':self.jobsMenu})
+      self.mediator.setSelection('2',{'label':'Find A Friend','action':self.friendMenu})
+      self.mediator.setSelection('3',{'label':'Skills','action':self.skillsMenu})
+    
+      self.mediator.setSkillSelection('1',{'label':'Skill A','action':self.skillA})
+      self.mediator.setSkillSelection('2',{'label':'Skill B','action':self.skillB})
+      self.mediator.setSkillSelection('3',{'label':'Skill C','action':self.skillC})
+      self.mediator.setSkillSelection('4',{'label':'Skill D','action':self.skillD})
+      self.mediator.setSkillSelection('5',{'label':'Skill E','action':self.skillE})
+      
       self.mediator.startEnviroment()
+    
   def jobsMenu(self):
       print("Under Construction")
-      
-      
+  def friendMenu(self):
+      print("Under Construction")
+  def skillsMenu(self):
+      while True:
+        self.mediator.displaySkillMenu()
+        choice = input("Make a Selection: ")
+        if(choice == '0'):
+          break
+        if choice in self.mediator.skillSelections:
+          thisSelection = self.mediator.skillSelections[choice]
+          menuItem = thisSelection['action']
+          menuItem()
+        else:
+          print("Invalid Selection! Please Try Again")
+        
+  def skillA(self):
+      print("Skill A")
+      print("Under Construction")
+  def skillB(self):
+      print("Skill B")
+      print("Under Construction")
+  def skillC(self):
+      print("Skill C")
+      print("Under Construction")
+  def skillD(self):
+      print("Skill D")
+      print("Under Construction")
+  def skillE(self):
+      print("Skill E")
+      print("Under Construction")
