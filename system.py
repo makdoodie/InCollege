@@ -3,6 +3,8 @@ import re
 import hashlib
 
 class MenuMediator:
+  ##Constructor
+  ## Hold Menu Items Internally
     def __init__(self):
       self.selections = {}
       self.skillSelections = {}
@@ -11,17 +13,20 @@ class MenuMediator:
       self.selections[hotKey] = selection
     def setSkillSelection(self,hotKey,selection):
       self.skillSelections[hotKey] = selection
-    ## Displays Each Set Menu Item; System Class performs the action  
+    ## Displays Each Set Menu Item; System Class performs the action
+   ##Display List
     def displayMainMenu(self):
       for hotKey,selection in self.selections.items():
         print("["+hotKey+"] "+ selection['label'])
       print("[0] Exit")
+    ##Display List  
     def displaySkillMenu(self):
       for hotKey,selection in self.skillSelections.items():
         print("["+hotKey+"] "+ selection['label'])
       print("[0] Exit")
       
     def startEnviroment(self):
+    ## Main Menu Loop
       while True:
         self.displayMainMenu()
         selection = input("Please, make a selection\n")
@@ -41,6 +46,7 @@ class System:
     self.cursor = self.conn.cursor() #creates cursor object which is later used to execute SQL queries
     self.cursor.execute("CREATE TABLE IF NOT EXISTS accounts (username varchar2(25) PRIMARY KEY, password varchar2(12))") #execute method and cursor object are used to create table if one does not exist
     self.conn.commit() #commit method used to save changes
+    ##Instantiate User Class Here ???
     self.loggedOn = loggedOn
     self.mediator = MenuMediator()
 
@@ -52,7 +58,7 @@ class System:
 
   def __del__(self, loggedOn): #closes connection to db
     self.conn.close() #closes connection to database
-
+  ##Will need removed after testing is completed
   def deleteTable(self):
     confirm = input("Are you sure you want to delete the current accouns in the database? This operation cannot be undone. (Y/N): ")
     if confirm.upper() == "Y":
@@ -61,7 +67,7 @@ class System:
       print("Table deleted successfully.")
     else:
       print("Deletion operation canceled.")
-      
+   ##Will need removed after testing is completed   
   def printTable(self):
     self.cursor.execute("SELECT * FROM accounts")
     rows = self.cursor.fetchall()
@@ -73,14 +79,17 @@ class System:
         print("No records found in the table.")
 
   def countRows(self):
+    ##Current Number of Accounts
     self.cursor.execute("SELECT COUNT(*) FROM accounts")
     count = self.cursor.fetchone()[0]
     return count
 
   def validatePassword(self, password,password_check): #validate password
+    ## Confirm
     if(password != password_check):
       print("Passwords must match")
       return False
+    ## Password Limits using Regex  
     if len(password) < 8 or len(password) > 12:
       print("Password must be 8-12 Characters in Length")
       return False
@@ -101,6 +110,7 @@ class System:
       if exists_user:
         print("Username has been taken.")
         return False
+       #arbitrary limit 
       if len(userName) > 25:
         print("Username must be less than 25 Characters in Length")
         return False
@@ -126,11 +136,13 @@ class System:
       return False
       
   def register(self, username, password, password_check):
+    ## Set Account Limit
     if self.countRows() >= 5:
       print("Maximum number of accounts created!")
       return False
     ## Validate Inputs
     if self.validatePassword(password,password_check) and self.validateUserName(username):
+    
       encrypted_pass = self.encryption(password)
       self.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (username, encrypted_pass))
       self.conn.commit() #saving new account to database
@@ -173,18 +185,20 @@ class System:
         else:
           break
   def mainMenu(self):
-      self.mediator.setSelection('1',{'label':'Job Search','action':self.jobsMenu})
+      ##Set Main Menu Items
+      self.mediator.setSelection('1',{'label':'Job/Internship Search','action':self.jobsMenu})
       self.mediator.setSelection('2',{'label':'Find A Friend','action':self.friendMenu})
-      self.mediator.setSelection('3',{'label':'Skills','action':self.skillsMenu})
-    
-      self.mediator.setSkillSelection('1',{'label':'Skill A','action':self.skillA})
-      self.mediator.setSkillSelection('2',{'label':'Skill B','action':self.skillB})
-      self.mediator.setSkillSelection('3',{'label':'Skill C','action':self.skillC})
-      self.mediator.setSkillSelection('4',{'label':'Skill D','action':self.skillD})
-      self.mediator.setSkillSelection('5',{'label':'Skill E','action':self.skillE})
-      
+      self.mediator.setSelection('3',{'label':'Learn a Skill','action':self.skillsMenu})
+      #Set Skill Items
+      self.mediator.setSkillSelection('1',{'label':'Learn Skill A','action':self.skillA})
+      self.mediator.setSkillSelection('2',{'label':'Learn Skill B','action':self.skillB})
+      self.mediator.setSkillSelection('3',{'label':'Learn Skill C','action':self.skillC})
+      self.mediator.setSkillSelection('4',{'label':'Learn Skill D','action':self.skillD})
+      self.mediator.setSkillSelection('5',{'label':'Learn Skill E','action':self.skillE})
+      #Start Main Menu Loop
       self.mediator.startEnviroment()
-    
+  ## Sub Menus
+  ## Plan to make a menu class object to simplify these
   def jobsMenu(self):
       print("Under Construction")
   def friendMenu(self):
@@ -192,7 +206,7 @@ class System:
   def skillsMenu(self):
       while True:
         self.mediator.displaySkillMenu()
-        choice = input("Make a Selection: ")
+        choice = input("Make a Selection to Learn A Skill: ")
         if(choice == '0'):
           break
         if choice in self.mediator.skillSelections:
@@ -201,19 +215,20 @@ class System:
           menuItem()
         else:
           print("Invalid Selection! Please Try Again")
-        
+  ## Skills to Learn
+  ## Needs to Skill Object
   def skillA(self):
-      print("Skill A")
+      print("Learn Skill A")
       print("Under Construction")
   def skillB(self):
-      print("Skill B")
+      print("Learn Skill B")
       print("Under Construction")
   def skillC(self):
-      print("Skill C")
+      print("Learn Skill C")
       print("Under Construction")
   def skillD(self):
-      print("Skill D")
+      print("Learn Skill D")
       print("Under Construction")
   def skillE(self):
-      print("Skill E")
+      print("Learn Skill E")
       print("Under Construction")
