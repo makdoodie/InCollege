@@ -96,7 +96,7 @@ class System:
     if not re.search("[A-Z]", password):
       print("Password must contain at least one upper case letter")
       return False
-    if not re.search("\d", password):
+    if not re.search("[0-9]", password):
       print("Password must contain at least one number")
       return False 
     if not re.search("[!@#$%^&*()_+]", password):
@@ -152,7 +152,8 @@ class System:
     
   def loginMenu(self):
     print("Welcome to the InCollege sign in page!\n")
-    choice = input("[0] Exit \n[1] Login \n[2] Create Account\n")
+    print("[0] Exit \n[1] Login \n[2] Create Account\n")
+    choice = input()
     while(True):
         if(choice == '0'):
           break
