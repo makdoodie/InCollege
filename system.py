@@ -8,6 +8,9 @@ class MenuMediator:
     def __init__(self):
       self.selections = {}
       self.skillSelections = {}
+    #destructor
+    def __del__(self):
+      pass #not sure what to include
     ## Set Each Menu Item for the  
     def setSelection(self,hotKey,selection):
       self.selections[hotKey] = selection
@@ -50,14 +53,15 @@ class System:
     self.loggedOn = loggedOn
     self.mediator = MenuMediator()
 
+  def __del__(self): #closes connection to db
+    self.conn.close() #closes connection to database
+    
   def encryption(self, password):
     sha256 = hashlib.sha256()
     sha256.update(password.encode('utf-8'))
     hashed_pass = sha256.hexdigest()
     return hashed_pass
 
-  def __del__(self, loggedOn): #closes connection to db
-    self.conn.close() #closes connection to database
   ##Will need removed after testing is completed
   def deleteTable(self):
     confirm = input("Are you sure you want to delete the current accouns in the database? This operation cannot be undone. (Y/N): ")
@@ -111,7 +115,7 @@ class System:
         print("Username has been taken.")
         return False
        #arbitrary limit 
-      if len(userName) > 25:
+      if len(userName) < 1 or len(userName) > 25:
         print("Username must be less than 25 Characters in Length")
         return False
       return True
@@ -127,10 +131,7 @@ class System:
           return True
         else:
           print("Invalid username/password, try again!")
-          username = input("Enter Username: ")
-          password = input("Enter Password: ")
-          self.loggedOn = self.login(username, password)
-          return True
+          return False
       else:
         print("Account not found, check credentials.")
       return False
