@@ -3,26 +3,26 @@ import re
 import hashlib
 
 class MenuMediator:
-  ##Constructor
+  ## Constructor
   ## Hold Menu Items Internally
     def __init__(self):
       self.selections = {}
       self.skillSelections = {}
     #destructor
     def __del__(self):
-      pass #not sure what to include
+      print('Menu Deconstructed')
     ## Set Each Menu Item for the  
     def setSelection(self,hotKey,selection):
       self.selections[hotKey] = selection
     def setSkillSelection(self,hotKey,selection):
       self.skillSelections[hotKey] = selection
     ## Displays Each Set Menu Item; System Class performs the action
-   ##Display List
+    ## Display List
     def displayMainMenu(self):
       for hotKey,selection in self.selections.items():
         print("["+hotKey+"] "+ selection['label'])
       print("[0] Exit")
-    ##Display List  
+    ## Display List  
     def displaySkillMenu(self):
       for hotKey,selection in self.skillSelections.items():
         print("["+hotKey+"] "+ selection['label'])
@@ -41,7 +41,7 @@ class MenuMediator:
           menuItem = thisSelection['action']
           menuItem()
         else:
-          print("Invalid Selection! Please Try Again")
+          print("Invalid Input. Please Try Again")
           
 class System:
   def __init__(self,loggedOn): #create and connect to db
@@ -64,7 +64,8 @@ class System:
 
   ##Will need removed after testing is completed
   def deleteTable(self):
-    confirm = input("Are you sure you want to delete the current accouns in the database? This operation cannot be undone. (Y/N): ")
+    print("Are you sure you want to delete the current accounts in the database? This operation cannot be undone. (Y/N): ")
+    confirm = input()
     if confirm.upper() == "Y":
       self.cursor.execute("DROP TABLE IF EXISTS accounts")
       self.conn.commit()
@@ -103,12 +104,12 @@ class System:
     if not re.search("[0-9]", password):
       print("Password must contain at least one number")
       return False 
-    if not re.search("[!@#$%^&*()_+]", password):
+    if not re.search("!@#$%^&*()_+-=[]{}|;:,.<>/?`~\'\"\\", password):
       print("Password must contain at least one special character")
       return False
     return True
     
-  def validateUserName(self, userName): #validate Username
+  def validateUserName(self, userName): # validate Username
       self.cursor.execute("SELECT * FROM accounts WHERE username=?", (userName,))
       exists_user = self.cursor.fetchone()
       if exists_user:
@@ -116,11 +117,17 @@ class System:
         return False
        #arbitrary limit 
       if len(userName) < 1 or len(userName) > 25:
-        print("Username must be less than 25 Characters in Length")
+        print("Username must be 1-25 Characters in Length")
         return False
       return True
 
-  def login(self, username, password): #login check
+  def login(self): #login check
+      print("Log In:\n")
+      print("Enter Username: ")
+      username = input()
+      print("Enter Password: ")
+      password = input()
+      ##Validate User Name and Password then Search
       self.cursor.execute("SELECT * FROM accounts WHERE username = ?", (username,)) 
       #? is placeholder for username
       account = self.cursor.fetchone() #fetches first row which query returns
@@ -134,63 +141,63 @@ class System:
           return False
       else:
         print("Account not found, check credentials.")
+        return False
       return False
       
-  def register(self, username, password, password_check):
+  def register(self):
     ## Set Account Limit
     if self.countRows() >= 5:
       print("Maximum number of accounts created!")
       return False
+    print("Enter Username: ")
+    username = input()
+    print("Enter Password: ")
+    password = input()
+    print("Confirm Password: ")
+    passwordCheck = input()
     ## Validate Inputs
-    if self.validatePassword(password,password_check) and self.validateUserName(username):
-    
+    if self.validatePassword(password,passwordCheck) and self.validateUserName(username):
       encrypted_pass = self.encryption(password)
       self.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (username, encrypted_pass))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
       return True
+    else:
+      print("Account Creation Failed.")
     return False
     
   def loginMenu(self):
     print("Welcome to the InCollege sign in page!\n")
-    print("[0] Exit \n[1] Login \n[2] Create Account\n")
-    choice = input()
     while(True):
+        print("[0] Exit \n[1] Login \n[2] Create Account\n")
+        choice = input()
         if(choice == '0'):
           break
         if not(self.loggedOn):
           if(choice == "1"):
-            print("Log In:\n")
-            username = input("Enter Username: ")
-            password = input("Enter Password: ")
-            self.loggedOn = self.login(username, password)
+            self.loggedOn = self.login()
+            if(self.loggedOn):
+              break
           elif(choice == "2"):
             registered = False
             print("Account Creation:\n")
-            username = input("Enter Username: ")
-            password = input("Enter Password: ")
-            passwordCheck = input("Confirm Password: ")
-            registered = self.register(username, password, passwordCheck)
+            registered = self.register()
             if(registered == True):
-              choice = "1"
-            else:
-              choice = input("[0] Exit \n[1] Login \n[2] Create Account\n")
+              self.loggedOn = self.login()
+              if(self.loggedOn):
+                break
           elif(choice == "8"):
             self.deleteTable()
-            choice = input("[1] Login [2] Create Account [0] Exit\n")
           elif(choice == "9"):
             self.printTable()
-            choice = input("[1] Login [2] Create Account [0] Exit\n")
           else:
-            print("Incorrect input. Please try again.")
-            choice = input("[1] Login [2] Create Account [0] Exit\n")
-        else:
-          break
+            print("Invalid Input. Please try again.")
+            
   def mainMenu(self):
       ##Set Main Menu Items
       self.mediator.setSelection('1',{'label':'Job/Internship Search','action':self.jobsMenu})
       self.mediator.setSelection('2',{'label':'Find A Friend','action':self.friendMenu})
-      self.mediator.setSelection('3',{'label':'Learn a Skill','action':self.skillsMenu})
+      self.mediator.setSelection('3',{'label':'Learn A Skill','action':self.skillsMenu})
       #Set Skill Items
       self.mediator.setSkillSelection('1',{'label':'Learn Skill A','action':self.skillA})
       self.mediator.setSkillSelection('2',{'label':'Learn Skill B','action':self.skillB})
@@ -199,7 +206,7 @@ class System:
       self.mediator.setSkillSelection('5',{'label':'Learn Skill E','action':self.skillE})
       #Start Main Menu Loop
       self.mediator.startEnviroment()
-  ## Sub Menus
+  ## Sub Menu
   ## Plan to make a menu class object to simplify these
   def jobsMenu(self):
       print("Under Construction")
@@ -208,7 +215,8 @@ class System:
   def skillsMenu(self):
       while True:
         self.mediator.displaySkillMenu()
-        choice = input("Make a Selection to Learn A Skill: ")
+        print("Make A Selection To Learn A Skill: ")
+        choice = input()
         if(choice == '0'):
           break
         if choice in self.mediator.skillSelections:
@@ -218,7 +226,7 @@ class System:
         else:
           print("Invalid Selection! Please Try Again")
   ## Skills to Learn
-  ## Needs to Skill Object
+  ## Needs Skill Object
   def skillA(self):
       print("Learn Skill A")
       print("Under Construction")
