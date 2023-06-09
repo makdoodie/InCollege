@@ -1,60 +1,89 @@
 import sqlite3
 import re
 import hashlib
+from user import User
+import os
 
-class MenuMediator:
+class Menu:
   ## Constructor
   ## Hold Menu Items Internally
     def __init__(self):
+      self.opening = ""
       self.selections = {}
-      self.skillSelections = {}
+      
     #destructor
     def __del__(self):
       print('Menu Deconstructed')
+    def clear(self):
+        if os.name == 'nt':
+            _ = os.system('cls')
+        else:
+            _ = os.system('clear')
     ## Set Each Menu Item for the  
     def setSelection(self,hotKey,selection):
       self.selections[hotKey] = selection
-    def setSkillSelection(self,hotKey,selection):
-      self.skillSelections[hotKey] = selection
+    def setOpening(self,opening):
+      self.opening = opening
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
-    def displayMainMenu(self):
+    def displaySelections(self):
+      print(self.opening)
       for hotKey,selection in self.selections.items():
         print("["+hotKey+"] "+ selection['label'])
       print("[0] Exit")
     ## Display List  
-    def displaySkillMenu(self):
-      for hotKey,selection in self.skillSelections.items():
-        print("["+hotKey+"] "+ selection['label'])
-      print("[0] Exit")
-      
-    def startEnviroment(self):
+    def start(self):
     ## Main Menu Loop
       while True:
-        self.displayMainMenu()
-        selection = input("Please, make a selection\n")
+        self.displaySelections()
+        selection = input()
         if(selection == '0'):
           print("Exiting")
+          self.clear()
           break
         if selection in self.selections:
+          self.clear()
           thisSelection = self.selections[selection]
           menuItem = thisSelection['action']
           menuItem()
         else:
           print("Invalid Input. Please Try Again")
-          
+ 
 class System:
-  def __init__(self,loggedOn): #create and connect to db
+  def __init__(self): #create and connect to db
     self.conn = sqlite3.connect("accounts.db") #establishes connection to SQLite database called accounts
     self.cursor = self.conn.cursor() #creates cursor object which is later used to execute SQL queries
-    self.cursor.execute("CREATE TABLE IF NOT EXISTS accounts (username varchar2(25) PRIMARY KEY, password varchar2(12))") #execute method and cursor object are used to create table if one does not exist
+    self.cursor.execute("CREATE TABLE IF NOT EXISTS accounts (username varchar2(25) PRIMARY KEY, password varchar2(12), fName varchar2(25), lName varchar2(25))") #execute method and cursor object are used to create table if one does not exist
     self.conn.commit() #commit method used to save changes
-    ##Instantiate User Class Here ???
-    self.loggedOn = loggedOn
-    self.mediator = MenuMediator()
-
+    ## Instantiate User Class Here ???
+    self.user = User("guest","","",False)
+    ## Menus
+    self.homePage = Menu()
+    self.mainMenu = Menu()
+    self.jobsMenu = Menu()
+    self.friendMenu = Menu()
+    self.videoMenu = Menu()
+    self.skillsMenu = Menu()
+    self.guestSearch = Menu()
+    
   def __del__(self): #closes connection to db
     self.conn.close() #closes connection to database
+  #System Level Controls for Menus    
+  def home_page(self):
+   if not(self.user.loggedOn):
+     self.homePage.start()
+   else:
+     self.mainMenu.start()
+  def main_menu(self):
+      self.mainMenu.start()
+  def jobs_menu(self):
+      self.jobsMenu.start()
+  def friend_menu(self):
+      self.friendMenu.start()
+  def video_menu(self):
+      self.videoMenu.start()
+  def skills_menu(self):
+      self.skillsMenu.start()
     
   def encryption(self, password):
     sha256 = hashlib.sha256()
@@ -81,31 +110,38 @@ class System:
       for row in rows:
         print(f"{row[0]}\t\t{row[1]}")
     else:
-        print("No records found in the table.")
+        print("No Records Found In The Table.")
 
-  def countRows(self):
+  def countRows(self,tableName):
     ##Current Number of Accounts
-    self.cursor.execute("SELECT COUNT(*) FROM accounts")
+    query = "SELECT COUNT(*) FROM {}".format(tableName)
+    self.cursor.execute(query)
     count = self.cursor.fetchone()[0]
     return count
+    
+  def validName(self,fName,lName):
+    if len(fName) < 1 or len(fName) > 23:
+      print("First Name Must Be 1-23 Characters In Length")
+    if len(lName) < 1 or len(lName) > 23:
+      print("Last Name Must Be 1-23 Characters In Length")
 
   def validatePassword(self, password,password_check): #validate password
     ## Confirm
     if(password != password_check):
-      print("Passwords must match")
+      print("Passwords Must Match")
       return False
     ## Password Limits using Regex  
     if len(password) < 8 or len(password) > 12:
-      print("Password must be 8-12 Characters in Length")
+      print("Password Must Be 8-12 Characters In Length")
       return False
     if not re.search("[A-Z]", password):
-      print("Password must contain at least one upper case letter")
+      print("Password Must Contain At Least One Upper Case Letter")
       return False
     if not re.search("[0-9]", password):
-      print("Password must contain at least one number")
+      print("Password Must Contain At Least One Number")
       return False 
-    if not re.search("!@#$%^&*()_+-=[]{}|;:,.<>/?`~\'\"\\", password):
-      print("Password must contain at least one special character")
+    if not re.search(r'[\!@#\$%\^&\*\(\)_\+\-\=\[\]\{\}\|\;\:\,\.\<\>\/\?\`\~\'\"\\]', password):
+      print("Password Must Contain At Least One Special Character")
       return False
     return True
     
@@ -113,132 +149,108 @@ class System:
       self.cursor.execute("SELECT * FROM accounts WHERE username=?", (userName,))
       exists_user = self.cursor.fetchone()
       if exists_user:
-        print("Username has been taken.")
+        print("Username Has Been Taken.")
         return False
        #arbitrary limit 
       if len(userName) < 1 or len(userName) > 25:
-        print("Username must be 1-25 Characters in Length")
+        print("Username Must Be 1-25 Characters in Length")
         return False
       return True
 
   def login(self): #login check
       print("Log In:\n")
       print("Enter Username: ")
-      username = input()
+      userName = input()
       print("Enter Password: ")
       password = input()
       ##Validate User Name and Password then Search
-      self.cursor.execute("SELECT * FROM accounts WHERE username = ?", (username,)) 
+      self.cursor.execute("SELECT * FROM accounts WHERE username = ?", (userName,)) 
       #? is placeholder for username
       account = self.cursor.fetchone() #fetches first row which query returns
       if account: #if the username exists, then we check that the password in the database matches the password the user inputted
         hashed_inputpass = self.encryption(password)
         if hashed_inputpass == account[1]:
-          print("You have successfully logged in!")
-          return True
+          print("You Have Successfully Logged In!")
+          self.user.login(userName,account[2],account[3])
+          self.home_page()
         else:
-          print("Invalid username/password, try again!")
-          return False
+          print("Invalid Username/Password, Try Again!")
       else:
-        print("Account not found, check credentials.")
-        return False
-      return False
+        print("Account Not Found, Check Username/Password.")
       
   def register(self):
     ## Set Account Limit
-    if self.countRows() >= 5:
-      print("Maximum number of accounts created!")
-      return False
+    if self.countRows("accounts") >= 5:
+      print("Maximum Number Of Accounts Created!")
+      return
     print("Enter Username: ")
     username = input()
+    print("Enter First Name: ")
+    fName = input()
+    print("Enter Last Name: ")
+    lName = input()
     print("Enter Password: ")
     password = input()
     print("Confirm Password: ")
     passwordCheck = input()
     ## Validate Inputs
-    if self.validatePassword(password,passwordCheck) and self.validateUserName(username):
+    if self.validatePassword(password,passwordCheck) and self.validateUserName(username) and self.validName(fName,lName):
       encrypted_pass = self.encryption(password)
-      self.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (username, encrypted_pass))
+      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName) VALUES (?, ?, ?, ?)", (username, encrypted_pass,fName,lName))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
-      return True
+      self.login()
+      return 
     else:
       print("Account Creation Failed.")
-    return False
-    
-  def loginMenu(self):
-    print("Welcome to the InCollege sign in page!\n")
-    while(True):
-        print("[0] Exit \n[1] Login \n[2] Create Account\n")
-        choice = input()
-        if(choice == '0'):
-          break
-        if not(self.loggedOn):
-          if(choice == "1"):
-            self.loggedOn = self.login()
-            if(self.loggedOn):
-              break
-          elif(choice == "2"):
-            registered = False
-            print("Account Creation:\n")
-            registered = self.register()
-            if(registered == True):
-              self.loggedOn = self.login()
-              if(self.loggedOn):
-                break
-          elif(choice == "8"):
-            self.deleteTable()
-          elif(choice == "9"):
-            self.printTable()
-          else:
-            print("Invalid Input. Please try again.")
-            
-  def mainMenu(self):
-      ##Set Main Menu Items
-      self.mediator.setSelection('1',{'label':'Job/Internship Search','action':self.jobsMenu})
-      self.mediator.setSelection('2',{'label':'Find A Friend','action':self.friendMenu})
-      self.mediator.setSelection('3',{'label':'Learn A Skill','action':self.skillsMenu})
-      #Set Skill Items
-      self.mediator.setSkillSelection('1',{'label':'Learn Skill A','action':self.skillA})
-      self.mediator.setSkillSelection('2',{'label':'Learn Skill B','action':self.skillB})
-      self.mediator.setSkillSelection('3',{'label':'Learn Skill C','action':self.skillC})
-      self.mediator.setSkillSelection('4',{'label':'Learn Skill D','action':self.skillD})
-      self.mediator.setSkillSelection('5',{'label':'Learn Skill E','action':self.skillE})
-      #Start Main Menu Loop
-      self.mediator.startEnviroment()
+    return
+
   ## Sub Menu
   ## Plan to make a menu class object to simplify these
-  def jobsMenu(self):
-      print("Under Construction")
-  def friendMenu(self):
-      print("Under Construction")
-  def skillsMenu(self):
-      while True:
-        self.mediator.displaySkillMenu()
-        print("Make A Selection To Learn A Skill: ")
-        choice = input()
-        if(choice == '0'):
-          break
-        if choice in self.mediator.skillSelections:
-          thisSelection = self.mediator.skillSelections[choice]
-          menuItem = thisSelection['action']
-          menuItem()
-        else:
-          print("Invalid Selection! Please Try Again")
   ## Skills to Learn
-  ## Needs Skill Object
   def skillA(self):
-      print("Learn Skill A")
+      print("Project Managment")
       print("Under Construction")
   def skillB(self):
-      print("Learn Skill B")
+      print("Networking")
       print("Under Construction")
   def skillC(self):
-      print("Learn Skill C")
+      print("System Design")
       print("Under Construction")
   def skillD(self):
-      print("Learn Skill D")
+      print("Coding")
       print("Under Construction")
   def skillE(self):
-      print("Learn Skill E")
+      print("Professional Communication")
       print("Under Construction")
+  def guestSearch(self):
+      print("Professional Communication")
+      print("Under Construction")
+  def initMenu(self):
+      ## Set Home Page Items
+      self.homePage.setOpening("Welcome to Our Home Page:")
+      self.homePage.setSelection('1',{'label':'Login','action':self.login})
+      self.homePage.setSelection('2',{'label':'Register','action':self.register})
+      self.homePage.setSelection('3',{'label':'Search Users','action':self.guestSearch})
+      self.homePage.setSelection('4',{'label':'Delete Users','action':self.deleteTable})
+      self.homePage.setSelection('5',{'label':'See Cool Video','action':self.video_menu})
+      ## Set Video Page Items
+      self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
+      ## Set Main Menu Items
+      self.mainMenu.setOpening("Welcome User!")
+      self.mainMenu.setSelection('1',{'label':'Job/Internship Search','action':self.jobs_menu})
+      self.mainMenu.setSelection('2',{'label':'Find A Friend','action':self.friend_menu})
+      self.mainMenu.setSelection('3',{'label':'Learn A Skill','action':self.skills_menu})
+      # Set Skill Items
+      self.skillsMenu.setOpening("Please Select a Skill:")
+      self.skillsMenu.setSelection('1',{'label':'Project Managment','action':self.skillA})
+      self.skillsMenu.setSelection('2',{'label':'Networking','action':self.skillB})
+      self.skillsMenu.setSelection('3',{'label':'System Design','action':self.skillC})
+      self.skillsMenu.setSelection('4',{'label':'Coding','action':self.skillD})
+      self.skillsMenu.setSelection('5',{'label':'Professional Communication','action':self.skillE})
+
+
+      
+    
+    
+  
