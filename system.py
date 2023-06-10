@@ -4,16 +4,28 @@ import hashlib
 from user import User
 import os
 
+class Jobs:
+    def __init__(self, title, employer, location, salary, posterFirstName, posterLastName, description=None):
+        self.title = title
+        self.description = description
+        self.employer = employer
+        self.location = location
+        self.salary = salary
+        self.posterFirstName = posterFirstName
+        self.posterLastName = posterLastName
 class Menu:
   ## Constructor
   ## Hold Menu Items Internally
     def __init__(self):
       self.opening = ""
+      self.exitStatement = "Exit"
       self.selections = {}
       
     #destructor
     def __del__(self):
       print('Menu Deconstructed')
+      
+    ##clear console  
     def clear(self):
         if os.name == 'nt':
             _ = os.system('cls')
@@ -24,16 +36,19 @@ class Menu:
       self.selections[hotKey] = selection
     def setOpening(self,opening):
       self.opening = opening
+    def setExitStatement(self,exit):
+      self.exitStatement = exit
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
       print(self.opening)
       for hotKey,selection in self.selections.items():
         print("["+hotKey+"] "+ selection['label'])
-      print("[0] Exit")
+      print("[0] " + self.exitStatement)
     ## Display List  
     def start(self):
     ## Main Menu Loop
+      
       while True:
         self.displaySelections()
         selection = input()
@@ -55,7 +70,24 @@ class System:
     self.cursor = self.conn.cursor() #creates cursor object which is later used to execute SQL queries
     self.cursor.execute("CREATE TABLE IF NOT EXISTS accounts (username varchar2(25) PRIMARY KEY, password varchar2(12), fName varchar2(25), lName varchar2(25))") #execute method and cursor object are used to create table if one does not exist
     self.conn.commit() #commit method used to save changes
-    ## Instantiate User Class Here ???
+    # SQL code to create the jobs table if one does not exist
+    create_jobs_table = """
+    CREATE TABLE IF NOT EXISTS jobs (
+      title VARCHAR(128) PRIMARY KEY,
+      description TEXT,
+      employer VARCHAR(128) NOT NULL,
+      location VARCHAR(128) NOT NULL,
+      salary DECIMAL(10, 2) NOT NULL,
+      posterFirstName VARCHAR(128),
+      posterLastName VARCHAR(128)
+    );
+    """
+    # Execute the SQL code
+    self.cursor.execute(create_jobs_table)
+    
+    # Commit the transaction
+    self.conn.commit()
+    ## Instantiate User Class Here
     self.user = User("guest","","",False)
     ## Menus
     self.homePage = Menu()
@@ -64,16 +96,26 @@ class System:
     self.friendMenu = Menu()
     self.videoMenu = Menu()
     self.skillsMenu = Menu()
-    self.guestSearch = Menu()
+    self.joinMenu = Menu()
     
   def __del__(self): #closes connection to db
-    self.conn.close() #closes connection to database
+    self.conn.close()
+    
   #System Level Controls for Menus    
   def home_page(self):
    if not(self.user.loggedOn):
      self.homePage.start()
    else:
      self.mainMenu.start()
+     self.user.logout()
+     
+  def join_menu(self):
+   if not(self.user.loggedOn):
+     self.joinMenu.start()
+   else:
+     self.mainMenu.start()
+     self.user.logout()
+     
   def main_menu(self):
       self.mainMenu.start()
   def jobs_menu(self):
@@ -91,17 +133,16 @@ class System:
     hashed_pass = sha256.hexdigest()
     return hashed_pass
 
-  ##Will need removed after testing is completed
   def deleteTable(self):
-    print("Are you sure you want to delete the current accounts in the database? This operation cannot be undone. (Y/N): ")
+    print("Are You Sure You Want To Delete The Current Accounts In The Database? This Operation Cannot Be Undone.(Y/N): ")
     confirm = input()
     if confirm.upper() == "Y":
       self.cursor.execute("DROP TABLE IF EXISTS accounts")
       self.conn.commit()
-      print("Table deleted successfully.")
+      print("Table Deleted Successfully.")
     else:
-      print("Deletion operation canceled.")
-   ##Will need removed after testing is completed   
+      print("Deletion Operation Canceled.")
+  
   def printTable(self):
     self.cursor.execute("SELECT * FROM accounts")
     rows = self.cursor.fetchall()
@@ -122,8 +163,27 @@ class System:
   def validName(self,fName,lName):
     if len(fName) < 1 or len(fName) > 23:
       print("First Name Must Be 1-23 Characters In Length")
+      return False
     if len(lName) < 1 or len(lName) > 23:
       print("Last Name Must Be 1-23 Characters In Length")
+      return False
+    return True
+    
+  def validPosNum(self,name,num):
+    if num.isdigit():
+      if int(num) < 0:
+        print(name + " Must Be Greater Than Or Equal to Zero.")
+        return False
+    else:
+      print(name + " Must Be A Number Value")
+      return False
+    return True
+        
+  def validString(self,name,string):
+    if len(string) > 128:
+      print(name + " Must Be 1-128 Characters")
+      return False
+    return True
 
   def validatePassword(self, password,password_check): #validate password
     ## Confirm
@@ -205,6 +265,31 @@ class System:
       print("Account Creation Failed.")
     return
 
+  def postJob(self):
+    ## Set Account Limit
+    if self.countRows("jobs") >= 5:
+      print("Maximum Number Of Jobs Posts Created!")
+      return
+    print("Enter Title: ")
+    title = input()
+    print("Enter Description: ")
+    description = input()
+    print("Enter Employer: ")
+    employer = input()
+    print("Enter Location: ")
+    location = input()
+    print("Enter Salary: ")
+    salary = input()
+    ## Validate Inputs
+    if self.validString("Title",title) and self.validString("Description",employer) and self.validString("Employer",employer)and self.validString("Location",location) and self.validPosNum("Salary",salary):
+      self.cursor.execute("INSERT INTO jobs (title, description,employer,location,salary,posterFirstName,posterLastName) VALUES (?, ?, ?, ?, ?, ?, ?)", (title, description,employer,location,salary,self.user.fName,self.user.lName))
+      self.conn.commit() #saving new account to database
+      print("Job Posted Successfully.")
+      return 
+    else:
+      print("Job Posting Creation Failed.")
+    return
+
   #This is the function to find someone they know in the system
   def findUser(self):
     #Prompts for searching by first name and last name
@@ -212,24 +297,20 @@ class System:
     fName = input()
     print("Enter Last Name: ")
     lName = input()
-
-    # Search for the user in the database
-    self.cursor.execute(
-        "SELECT * FROM accounts WHERE fName = ? AND lName = ?",
-        (fName, lName),
-    )
-    result = self.cursor.fetchall()
-
-    #If the user is found, print 
-    if len(result) > 0:
-        print("They are part of the InCollege system.")
+    # Validate
+    if(self.validName(fName,lName)):
+        # Search for the user in the database
+        self.cursor.execute("SELECT * FROM accounts WHERE UPPER(fName) = UPPER(?) AND UPPER(lName) = UPPER(?)", (fName, lName))
+        result = self.cursor.fetchall()
+        ## If the user is found, print 
+        if len(result) > 0:
+            print("They Are Part Of The InCollege System.")
+        else:
+            print("They Are Not Yet A Part Of The InCollege System.")
+        ## Change to Join Menu 
+        self.join_menu()
     else:
-        print("They are not yet a part of the InCollege system.")
-    self.home_page()
-    
-  
-  ## Sub Menu
-  ## Plan to make a menu class object to simplify these
+      print("Invalid Name Given. Please Try Again.")
   ## Skills to Learn
   def skillA(self):
       print("Project Managment")
@@ -251,13 +332,24 @@ class System:
       print("Under Construction")
   def initMenu(self):
       ## Set Home Page Items
-      self.homePage.setOpening("Welcome to Our Home Page:")
+      hpOpening = """
+      Welcome To The InCollege Home Page!
+      
+      The Place Where Students Take The Next Big Step.
+
+      "I Had To Battle With Anxiety Every Day Until I Signed Up For InCollege.
+       Now, My Future Is On The Right Track And Im Able To Apply My Education To My 
+       Dream Career. Finding A Place In My Field Of Study Was A Breeze"
+        -Stephen Hawking
+
+    """
+      self.homePage.setOpening(hpOpening)
       self.homePage.setSelection('1',{'label':'Login','action':self.login})
       self.homePage.setSelection('2',{'label':'Register','action':self.register})
-      self.homePage.setSelection('3',{'label':'Search Users','action':self.guestSearch})
+      self.homePage.setSelection('3',{'label':'Find People I Know','action':self.findUser})
       self.homePage.setSelection('4',{'label':'Delete Users','action':self.deleteTable})
-      self.homePage.setSelection('5',{'label':'See Cool Video','action':self.video_menu})
-      self.homePage.setSelection('6',{'label':'Find People I Know','action':self.findUser}) #For finding people you know
+      self.homePage.setSelection('5',{'label':'See Our Success Video','action':self.video_menu})
+       #For finding people you know
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
@@ -265,6 +357,7 @@ class System:
       self.mainMenu.setSelection('1',{'label':'Job/Internship Search','action':self.jobs_menu})
       self.mainMenu.setSelection('2',{'label':'Find A Friend','action':self.friend_menu})
       self.mainMenu.setSelection('3',{'label':'Learn A Skill','action':self.skills_menu})
+      self.mainMenu.setExitStatement("Log Out")
       # Set Skill Items
       self.skillsMenu.setOpening("Please Select a Skill:")
       self.skillsMenu.setSelection('1',{'label':'Project Managment','action':self.skillA})
@@ -272,6 +365,17 @@ class System:
       self.skillsMenu.setSelection('3',{'label':'System Design','action':self.skillC})
       self.skillsMenu.setSelection('4',{'label':'Coding','action':self.skillD})
       self.skillsMenu.setSelection('5',{'label':'Professional Communication','action':self.skillE})
+      self.skillsMenu.setExitStatement("Return To Main Menu")
+      # Set Join Items
+      self.joinMenu.setOpening("Would You Like To Join Your Friends On InCollege?")
+      self.joinMenu.setSelection('1',{'label':'Login','action':self.login})
+      self.joinMenu.setSelection('2',{'label':'Register','action':self.register})
+      self.joinMenu.setExitStatement("Return To Home Page")
+      # Set Post A Job Items
+      self.jobsMenu.setOpening("Welcome to the Job Postings Page")
+      self.jobsMenu.setSelection('1',{'label':'Post Job','action':self.postJob})
+      self.jobsMenu.setExitStatement("Return To Main Menu")
+      
 
 
       
