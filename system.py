@@ -205,6 +205,29 @@ class System:
       print("Account Creation Failed.")
     return
 
+  #This is the function to find someone they know in the system
+  def findUser(self):
+    #Prompts for searching by first name and last name
+    print("Enter First Name: ")
+    fName = input()
+    print("Enter Last Name: ")
+    lName = input()
+
+    # Search for the user in the database
+    self.cursor.execute(
+        "SELECT * FROM accounts WHERE fName = ? AND lName = ?",
+        (fName, lName),
+    )
+    result = self.cursor.fetchall()
+
+    #If the user is found, print 
+    if len(result) > 0:
+        print("They are part of the InCollege system.")
+    else:
+        print("They are not yet a part of the InCollege system.")
+    self.home_page()
+    
+  
   ## Sub Menu
   ## Plan to make a menu class object to simplify these
   ## Skills to Learn
@@ -234,6 +257,7 @@ class System:
       self.homePage.setSelection('3',{'label':'Search Users','action':self.guestSearch})
       self.homePage.setSelection('4',{'label':'Delete Users','action':self.deleteTable})
       self.homePage.setSelection('5',{'label':'See Cool Video','action':self.video_menu})
+      self.homePage.setSelection('6',{'label':'Find People I Know','action':self.findUser}) #For finding people you know
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
