@@ -65,8 +65,8 @@ def test_query_names(system_instance, capsys):
   # initialize menu options
   system_instance.initMenu()
 
-  first_name = "Jane"
-  last_name = "Smith"
+  first_name = "jane"
+  last_name = "smith"
 
   # simulate creating an account and then simulate user searching for that person
   with mock.patch('builtins.input', side_effect=['2', 'Jane35', first_name, last_name, 'Testing12*', 'Testing12*', 'Jane35', 'Testing12*', '0', '0']):
@@ -74,7 +74,7 @@ def test_query_names(system_instance, capsys):
 
   system_instance.cursor.execute(
     "SELECT * FROM accounts WHERE UPPER(fName) = UPPER(?) AND UPPER(lName) = UPPER(?)",
-    (first_name.lower(), last_name.lower()))
+    (first_name, last_name))
 
   result_lower = system_instance.cursor.fetchall()
 
@@ -82,11 +82,11 @@ def test_query_names(system_instance, capsys):
 
   system_instance.cursor.execute(
     "SELECT * FROM accounts WHERE UPPER(fName) = UPPER(?) AND UPPER(lName) = UPPER(?)",
-    (first_name.upper(), last_name.upper()))
+    (first_name.capitalize(), last_name.capitalize()))
 
-  result_upper = system_instance.cursor.fetchall()
+  result_capital = system_instance.cursor.fetchall()
 
-  assert len(result_upper) > 0
+  assert len(result_capital) > 0
 
 
 # Task 4: Check for message when user is located
