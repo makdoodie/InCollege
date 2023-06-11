@@ -224,10 +224,10 @@ def generate_random_string(length, num_upper, num_digits, num_special):
 
 # tests that passwords are validated according to the appropriate criteria
 def test_validate_password(system_instance, capfd):
-    msg_pass_length = "Password must be 8-12 Characters in Length"
-    msg_pass_upper = "Password must contain at least one upper case letter"
-    msg_pass_digit = "Password must contain at least one number"
-    msg_pass_special = "Password must contain at least one special character"
+    msg_pass_length = "Password Must Be 8-12 Characters In Length"
+    msg_pass_upper = "Password Must Contain At Least One Upper Case Letter"
+    msg_pass_digit = "Password Must Contain At Least One Number"
+    msg_pass_special = "Password Must Contain At Least One Special Character"
     # empty password must fail
     password = generate_random_string(0, 0, 0, 0)
     assert system_instance.validatePassword(password, password) is False
@@ -267,7 +267,7 @@ def test_validate_password(system_instance, capfd):
 
 # test that usernames are properly validated based on their length
 def test_validate_username_length(system_instance, capfd):
-    usr_length_msg = "Username must be 1-25 Characters in Length"
+    usr_length_msg = "Username Must Be 1-25 Characters in Length"
     min_len, max_len = 1, 25
     # no username / too short
     username = ''
@@ -298,7 +298,7 @@ def test_validate_username_length(system_instance, capfd):
 # tests that usernames are validated based on uniqueness
 def test_validate_username_not_unique(system_instance, capfd):
     # username not unique (already taken)
-    usr_taken_msg = "Username has been taken."
+    usr_taken_msg = "Username Has Been Taken."
     system_instance.cursor.execute('SELECT username FROM accounts LIMIT 1')
     username = system_instance.cursor.fetchone()
     test_user = True
@@ -325,7 +325,7 @@ def test_validate_username_not_unique(system_instance, capfd):
 # also tests that new account are rejected once the account limit is reached
 def test_register_success(system_instance, capfd, temp_remove_accounts):
     account_limit = 5
-    msg_max_accounts = "Maximum number of accounts created!"
+    msg_max_accounts = "Maximum Number Of Accounts Created!"
     msg_reg_success = "Account created successfully."
 
     # register max number of accounts
