@@ -4,77 +4,72 @@ import random
 from unittest import mock
 from system import System
 
+
+# creates an instance of the system class to be used for testing
+@pytest.fixture
+def system_instance():
+    return System()
+
 # validate password 
-def test_validate_valid_password():
-      system = System(loggedOn=False)
+def test_validate_valid_password(system_instance):
       # Call the validate function with a valid password
       valid_password = "ValidPas123!"
       valid_password_again = "ValidPas123!"
-      result = system.validatePassword(valid_password,valid_password_again)
+      result = system_instance.validatePassword(valid_password,valid_password_again)
       # Assert that the result is True
       assert result is True
 
 
 # test invalid password 
-def test_validate_invalid_password():
-        system = System(loggedOn=False)
+def test_validate_invalid_password(system_instance):
         # Call the validate function with an invalid password
         invalid_password = "invalid"
         retry = "invalid1"
-        result = system.validatePassword(invalid_password,retry)
+        result = system_instance.validatePassword(invalid_password,retry)
         # Assert that the result is False
         assert result is False  
 
 
-def test_login_successful(capsys):
-    # Instantiate the System class
-    system = System(loggedOn=True)
-
+def test_login_successful(system_instance, capsys):
     # Set up a test user account
     test_username = "user"
     test_password = "Testpassword1*"
-    system.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (test_username, system.encryption(test_password)))
-    system.conn.commit()
+    system_instance.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (test_username, system_instance.encryption(test_password)))
+    system_instance.conn.commit()
 
     # Call the login method with the correct credentials
-    result = system.login(test_username, test_password)
+    result = system_instance.login(test_username, test_password)
 
     # Assert the expected behavior
 
     captured = capsys.readouterr()
     assert "You have successfully logged in!" in captured.out
     assert result is True
-    assert system.loggedOn is True
+    assert system_instance.loggedOn is True
 
     # Clean up the test user account
-    system.cursor.execute("DELETE FROM accounts WHERE username=?", (test_username,))
-    system.conn.commit()
+    system_instance.cursor.execute("DELETE FROM accounts WHERE username=?", (test_username,))
+    system_instance.conn.commit()
 
 
-def test_login_account_not_found():
-    # Instantiate the System class
-    system = System(loggedOn=False)
-
+def test_login_account_not_found(system_instance):
     # Call the login method with non-existent credentials
-    result = system.login("nonexistentuser", "password")
+    result = system_instance.login("nonexistentuser", "password")
 
     # Assert the expected behavior
     assert result is False
 
 
-def test_invalid_credentials(capsys):
-    # Instantiate the System class
-    system = System(loggedOn=False)
-
-    # Set up a test user account
+def test_invalid_credentials(system_instance, capsys):
+# Set up a test user account
     test_username = "user"
     test_password = "Testpassword1*"
-    system.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (test_username, system.encryption(test_password)))
-    system.conn.commit()
+    system_instance.cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (test_username, system_instance.encryption(test_password)))
+    system_instance.conn.commit()
 
     # Call the login method with the correct credentials
     invalidpass= "NoWorkng!*"
-    result= system.login(test_username, invalidpass)
+    result= system_instance.login(test_username, invalidpass)
      
     # Assert the expected behavior
     assert result is False
@@ -82,69 +77,64 @@ def test_invalid_credentials(capsys):
     assert "Invalid username/password, try again!" in captured.out
     
     # Clean up the test user account
-    system.cursor.execute("DELETE FROM accounts WHERE username=?", (test_username,))
-    system.conn.commit()
+    system_instance.cursor.execute("DELETE FROM accounts WHERE username=?", (test_username,))
+    system_instance.conn.commit()
 
 
-def test_menu(capsys):
+def test_menu(system_instance, capsys):
   # create an instance of system
-  system = System()
-  system.initMenu()
-  homepage = system.homePage
+  system_instance.initMenu()
+  homepage = system_instance.homePage
   
 
   assert '1' in homepage.selections
-  assert homepage.selections['1'] == {'label': 'Login','action': system.login}
+  assert homepage.selections['1'] == {'label': 'Login','action': system_instance.login}
 
   assert '2' in homepage.selections
-  assert homepage.selections['2'] == {'label': 'Register','action': system.register}
+  assert homepage.selections['2'] == {'label': 'Register','action': system_instance.register}
 
 
 # all these functions are under contructions
 # search for a job or internship
-def test_job_search_under_construction(capsys):
-    system = System(loggedOn=True)
-    system.jobsMenu()
+def test_job_search_under_construction(system_instance, capsys):
+    system_instance.jobsMenu()
     captured = capsys.readouterr()
     assert "Under Construction" in captured.out
 
 
 #find someone the user knows friend
-def test_find_friend_under_construction(capsys):
-    system = System(loggedOn=True)
-    system.friendMenu()
+def test_find_friend_under_construction(system_instance, capsys):
+    system_instance.friendMenu()
     captured = capsys.readouterr()
     assert "Under Construction" in captured.out
 
 
-def test_skill_option(capsys):
+def test_skill_option(system_instance, capsys):
   # create an instance of system
-  system = System()
-  system.initMenu()
-  main_menu = system.mainMenu
+  system_instance.initMenu()
+  main_menu = system_instance.mainMenu
 
   assert '3' in main_menu.selections
   assert main_menu.selections['3'] == {
     'label': 'Learn A Skill',
-    'action': system.skills_menu
+    'action': system_instance.skills_menu
   }
 
 
-def test_numOfSkills(capsys):
+def test_numOfSkills(system_instance, capsys):
   # create an instance of system
-  system = System()
-  system.initMenu()
-  skills_menu = system.skillsMenu
+  system_instance.initMenu()
+  skills_menu = system_instance.skillsMenu
 
   options = ['1','2','3','4','5']
   for item in options:
     assert item in skills_menu.selections
 
-  assert skills_menu.selections['1'] == {'label': 'Project Management','action': system.skillA}
-  assert skills_menu.selections['2'] == {'label': 'Networking','action': system.skillB}
-  assert skills_menu.selections['3'] == {'label': 'System Design','action': system.skillC}
-  assert skills_menu.selections['4'] == {'label': 'Coding','action': system.skillD}
-  assert skills_menu.selections['5'] == {'label': 'Professional Communication','action': system.skillE}
+  assert skills_menu.selections['1'] == {'label': 'Project Management','action': system_instance.skillA}
+  assert skills_menu.selections['2'] == {'label': 'Networking','action': system_instance.skillB}
+  assert skills_menu.selections['3'] == {'label': 'System Design','action': system_instance.skillC}
+  assert skills_menu.selections['4'] == {'label': 'Coding','action': system_instance.skillD}
+  assert skills_menu.selections['5'] == {'label': 'Professional Communication','action': system_instance.skillE}
   
 
 
@@ -152,46 +142,37 @@ def test_numOfSkills(capsys):
 that each of the skills in the menu print the 'Under Construction' message """
 
 
-def test_skillA(capsys):
-  system = System()
-  system.skillA()
+def test_skillA(system_instance, capsys):
+  system_instance.skillA()
   captured = capsys.readouterr()
   assert "Under Construction" in captured.out
   assert "Project Management" in captured.out
 
 
-def test_skillB(capsys):
-  system = System()
-  system.skillB()
+def test_skillB(system_instance, capsys):
+  system_instance.skillB()
   captured = capsys.readouterr()
   assert "Under Construction" in captured.out
   assert "Networking" in captured.out
 
-def test_skillC(capsys):
-  system = System()
-  system.skillC()
+def test_skillC(system_instance, capsys):
+  system_instance.skillC()
   captured = capsys.readouterr()
   assert "Under Construction" in captured.out
   assert "System Design" in captured.out
 
-def test_skillD(capsys):
-  system = System()
-  system.skillD()
+def test_skillD(system_instance, capsys):
+  system_instance.skillD()
   captured = capsys.readouterr()
   assert "Under Construction" in captured.out
   assert "Coding" in captured.out
 
-def test_skillE(capsys):
-  system = System()
-  system.skillE()
+def test_skillE(system_instance, capsys):
+  system_instance.skillE()
   captured = capsys.readouterr()
   assert "Under Construction" in captured.out
   assert "Professional Communication" in captured.out
 
-# creates an instance of the system class to be used for testing
-@pytest.fixture
-def system_instance():
-    return System()
 
 
 # setup and teardown style method that
