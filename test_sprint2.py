@@ -113,7 +113,7 @@ def test_skillA(capsys):
   system = System()
   system.skillA()
   captured = capsys.readouterr()
-  assert "Project Managment" in captured.out
+  assert "Project Management" in captured.out
   assert "Under Construction" in captured.out
 
 
