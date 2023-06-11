@@ -314,7 +314,7 @@ class System:
       print("Invalid Name Given. Please Try Again.")
   ## Skills to Learn
   def skillA(self):
-      print("Project Managment")
+      print("Project Management")
       print("Under Construction")
   def skillB(self):
       print("Networking")
