@@ -361,7 +361,7 @@ class System:
       self.mainMenu.setExitStatement("Log Out")
       # Set Skill Items
       self.skillsMenu.setOpening("Please Select a Skill:")
-      self.skillsMenu.setSelection('1',{'label':'Project Managment','action':self.skillA})
+      self.skillsMenu.setSelection('1',{'label':'Project Management','action':self.skillA})
       self.skillsMenu.setSelection('2',{'label':'Networking','action':self.skillB})
       self.skillsMenu.setSelection('3',{'label':'System Design','action':self.skillC})
       self.skillsMenu.setSelection('4',{'label':'Coding','action':self.skillD})
