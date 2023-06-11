@@ -23,7 +23,8 @@ class Menu:
       
     #destructor
     def __del__(self):
-      print('Menu Deconstructed')
+      # print('Menu Deconstructed')
+      pass
       
     ##clear console  
     def clear(self):
@@ -340,7 +341,7 @@ class System:
       "I Had To Battle With Anxiety Every Day Until I Signed Up For InCollege.
        Now, My Future Is On The Right Track And Im Able To Apply My Education To My 
        Dream Career. Finding A Place In My Field Of Study Was A Breeze"
-        -Stephen Hawking
+        - InCollege User
 
     """
       self.homePage.setOpening(hpOpening)
