@@ -49,8 +49,7 @@ def test_name_prompt(system_instance, capsys):
   system_instance.initMenu()
 
   # simulate user choosing Find People I Know Option
-  with mock.patch('builtins.input', side_effect=['3', 'John', 'Doe', '0',
-                                                 '0']):
+  with mock.patch('builtins.input', side_effect=['3', 'John', 'Doe', '0', '0']):
     system_instance.home_page()
 
   # capture output
@@ -60,6 +59,35 @@ def test_name_prompt(system_instance, capsys):
   assert "Enter First Name:" in captured.out
   assert "Enter Last Name:" in captured.out
 
+# Task 3: Query accounts table for matching first and last name
+@pytest.mark.usefixtures("temp_remove_accounts")
+def test_query_names(system_instance, capsys):
+  # initialize menu options
+  system_instance.initMenu()
+
+  first_name = "Jane"
+  last_name = "Smith"
+
+  # simulate creating an account and then simulate user searching for that person
+  with mock.patch('builtins.input', side_effect=['2', 'Jane35', first_name, last_name, 'Testing12*', 'Testing12*', 'Jane35', 'Testing12*', '0', '0']):
+    system_instance.home_page()
+
+  system_instance.cursor.execute(
+    "SELECT * FROM accounts WHERE UPPER(fName) = UPPER(?) AND UPPER(lName) = UPPER(?)",
+    (first_name.lower(), last_name.lower()))
+
+  result_lower = system_instance.cursor.fetchall()
+
+  assert len(result_lower) > 0
+
+  system_instance.cursor.execute(
+    "SELECT * FROM accounts WHERE UPPER(fName) = UPPER(?) AND UPPER(lName) = UPPER(?)",
+    (first_name.upper(), last_name.upper()))
+
+  result_upper = system_instance.cursor.fetchall()
+
+  assert len(result_upper) > 0
+
 
 # Task 4: Check for message when user is located
 @pytest.mark.usefixtures("temp_remove_accounts")
@@ -68,11 +96,7 @@ def test_user_located(system_instance, capsys):
   system_instance.initMenu()
 
   # simulate creating an account and then simulate user searching for that person
-  with mock.patch('builtins.input',
-                  side_effect=[
-                    '2', 'Jane35', 'Jane', 'Smith', 'Testing12*', 'Testing12*',
-                    'Jane35', 'Testing12*', '0', '3', 'Jane', 'Smith', '0', '0'
-                  ]):
+  with mock.patch('builtins.input', side_effect=['2', 'Jane35', 'Jane', 'Smith', 'Testing12*', 'Testing12*','Jane35', 'Testing12*', '0', '3', 'Jane', 'Smith', '0', '0']):
     system_instance.home_page()
 
   # capture output
@@ -98,27 +122,3 @@ def test_user_not_located(system_instance, capsys):
   assert "They Are Not Yet A Part Of The InCollege System." in captured.out
 
 
-# Task 3: Query accounts table for matching first and last name
-@pytest.mark.usefixtures("temp_remove_accounts")
-def test_query_names(system_instance, capsys):
-  # initialize menu options
-  system_instance.initMenu()
-
-  first_name = "Jane"
-  last_name = "Smith"
-
-  # simulate creating an account and then simulate user searching for that person
-  with mock.patch('builtins.input',
-                  side_effect=[
-                    '2', 'Jane35', first_name, last_name, 'Testing12*',
-                    'Testing12*', 'Jane35', 'Testing12*', '0', '0'
-                  ]):
-    system_instance.home_page()
-
-  system_instance.cursor.execute(
-    "SELECT * FROM accounts WHERE UPPER(fName) = UPPER(?) AND UPPER(lName) = UPPER(?)",
-    (first_name, last_name))
-
-  result = system_instance.cursor.fetchall()
-
-  print(result)
