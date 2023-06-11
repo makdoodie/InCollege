@@ -3,18 +3,11 @@ from system import Jobs
 import sqlite3
 from system import System
 from system import Menu
-import io
-import sys
 from unittest.mock import Mock
-from unittest.mock import MagicMock
 from unittest.mock import patch
 import os
 from unittest import mock
 
-import builtins
-from user import User
-from io import StringIO
-import sys
 
 #story: As a developer, I want to add support for jobs to the DB and app, so that the "Post A Job" feature can be implemented.
 #task 1: test this function: Create a jobs class with members: title, description, employer, location, salary, poster first name and last name.
