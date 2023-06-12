@@ -21,7 +21,7 @@ def temp_remove_accounts(system_instance):
   system_instance.cursor.execute("DELETE FROM accounts")
   if len(saved_accounts) > 0:
     system_instance.cursor.executemany(
-      "INSERT INTO accounts (username, password) VALUES (?, ?)",
+      "INSERT INTO accounts (username, password, fName, lName) VALUES (?, ?, ?, ?)",
       saved_accounts)
   system_instance.conn.commit()
 
