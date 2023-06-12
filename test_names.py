@@ -37,7 +37,7 @@ def test_name_register(system_instance, temp_remove_accounts, capsys):
   output = captured.out.split('\n')
   assert output[22] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
 
-def test_name_db(system_instance, temp_remove_accounts, test_name_register):
+def test_name_db(system_instance, temp_remove_accounts, test_name_register):#test that the users first and last name are stored in the db under fName and lName which are the second and third column
   fName = "unit"
   cursor = system_instance.conn.cursor()
   cursor.execute('Select * From accounts where fName = (?);', (fName,))
