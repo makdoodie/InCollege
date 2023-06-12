@@ -26,6 +26,7 @@ def temp_remove_accounts(system_instance):
   system_instance.conn.commit()
 
 
+# Check that join menu appears when a user finds someone they know
 @pytest.mark.usefixtures("temp_remove_accounts")
 def test_join_menu(system_instance, capsys):
   # initialize menu options
