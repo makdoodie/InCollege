@@ -27,7 +27,7 @@ def temp_remove_accounts(system_instance):
   system_instance.conn.commit()
 
 
-# Task 1: Check for Find People I Know Option
+# Check for Find People I Know Option
 def test_find_people(system_instance):
   # initialize menu options
   system_instance.initMenu()
@@ -43,7 +43,7 @@ def test_find_people(system_instance):
   }
 
 
-# Task 2: Check for first and lats name prompts
+# Check for first and last name prompts
 def test_name_prompt(system_instance, capsys):
   # initialize menu options
   system_instance.initMenu()
@@ -59,7 +59,8 @@ def test_name_prompt(system_instance, capsys):
   assert "Enter First Name:" in captured.out
   assert "Enter Last Name:" in captured.out
 
-# Task 3: Query accounts table for matching first and last name
+
+# Query accounts table for matching first and last name
 @pytest.mark.usefixtures("temp_remove_accounts")
 def test_query_names(system_instance, capsys):
   # initialize menu options
@@ -89,7 +90,7 @@ def test_query_names(system_instance, capsys):
   assert len(result_capital) > 0
 
 
-# Task 4: Check for message when user is located
+# Check for message when user is located
 @pytest.mark.usefixtures("temp_remove_accounts")
 def test_user_located(system_instance, capsys):
   # initialize menu options
@@ -105,14 +106,13 @@ def test_user_located(system_instance, capsys):
   assert "They Are Part Of The InCollege System." in captured.out
 
 
-# Task 5: Check for message when user not in system
+# Check for message when user not in system
 def test_user_not_located(system_instance, capsys):
   # initialize menu options
   system_instance.initMenu()
 
   # simulate user choosing Find People I Know Option
-  with mock.patch('builtins.input', side_effect=['3', 'John', 'Doe', '0',
-                                                 '0']):
+  with mock.patch('builtins.input', side_effect=['3', 'John', 'Doe', '0','0']):
     system_instance.home_page()
 
   # capture output

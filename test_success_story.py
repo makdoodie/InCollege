@@ -1,5 +1,5 @@
 import pytest
-from system import System, Menu
+from system import System
 from unittest import mock
 
 
@@ -7,7 +7,7 @@ from unittest import mock
 def system_instance():
   return System()
 
-
+# Check that video option is availabe
 def test_video_option(system_instance, capsys):
   # initialize menu options
   system_instance.initMenu()
@@ -15,7 +15,7 @@ def test_video_option(system_instance, capsys):
   # access homePage attribute
   home_page = system_instance.homePage
 
-  # check if video option is available
+  # assert video option is available
   assert '5' in home_page.selections, "Selection '5' not found in home page options"
   assert home_page.selections['5'] == {
     'label': 'See Our Success Video',
@@ -32,7 +32,7 @@ def test_video_option(system_instance, capsys):
   # assert expected output
   assert "(Playing Video)" in captured.out
 
-
+# Check to see that success story is displayed
 def test_student_success(system_instance, capsys):
   # initialize menu options
   system_instance.initMenu()
