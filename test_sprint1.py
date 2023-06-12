@@ -10,7 +10,6 @@ from system import System
 def system_instance():
   return System()
 
-
 # setup and teardown style method that
 # temporarily removes existing accounts from DB when testing
 @pytest.fixture
