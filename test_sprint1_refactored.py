@@ -572,7 +572,7 @@ def test_register_fail_password(system_instance, capfd, temp_remove_accounts):
 
 
 # tests that the register menu prompts the user for username and password
-def test_login_menu_register(system_instance, capsys):
+def test_login_menu_register(system_instance, temp_remove_accounts,capsys):
   # register menu prompts
   prompts = ["Enter Username:", "Enter First Name:", "Enter Last Name:", "Enter Password:", "Confirm Password:"]
   # simulated inputs for testing register menu
