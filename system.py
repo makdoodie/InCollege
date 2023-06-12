@@ -13,6 +13,7 @@ class Jobs:
         self.salary = salary
         self.posterFirstName = posterFirstName
         self.posterLastName = posterLastName
+  
 class Menu:
   ## Constructor
   ## Hold Menu Items Internally
@@ -306,13 +307,13 @@ class System:
         ## If the user is found, print 
         if len(result) > 0:
             print("They Are Part Of The InCollege System.")
+            self.join_menu()
         else:
             print("They Are Not Yet A Part Of The InCollege System.")
-        ## Change to Join Menu 
-        self.join_menu()
+        
     else:
       print("Invalid Name Given. Please Try Again.")
-  ## Skills to Learn
+  ## Skills to Learn ##
   def skillA(self):
       print("Project Management")
       print("Under Construction")
