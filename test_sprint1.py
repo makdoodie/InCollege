@@ -369,6 +369,7 @@ def test_validate_username_not_unique(system_instance, capfd):
 # tests that the maximum number of accounts can be registered and stored in the database
 # also tests that new account are rejected once the account limit is reached
 def test_register_success(system_instance, capfd, temp_remove_accounts):
+  system_instance.initMenu()
   account_limit = 5
   msg_max_accounts = "Maximum Number Of Accounts Created!"
   msg_reg_success = "Account created successfully."
@@ -380,9 +381,14 @@ def test_register_success(system_instance, capfd, temp_remove_accounts):
     username = generate_random_string(length, 1, 1, 0)
     length = random.randint(8, 12)
     password = generate_random_string(length, 1, 1, 1)
-    result = system_instance.register(username, password, password)
+    fName = generate_random_string(8, 1, 0, 0)
+    lName = generate_random_string(8, 1, 0, 0)
+    # simulate 5 users creating an account
+    with mock.patch('builtins.input', side_effect=['2', username, fName, lName, password, password, username, password, '0', '0']):
+      system_instance.home_page()
+      
     std = capfd.readouterr()
-    assert result is True and std.out.strip() == msg_reg_success
+    assert msg_reg_success in std.out.strip()
     password = system_instance.encryption(password)
     temp_accounts.append((username, password))
 
@@ -391,14 +397,19 @@ def test_register_success(system_instance, capfd, temp_remove_accounts):
   username = generate_random_string(length, 1, 1, 0)
   length = random.randint(8, 12)
   password = generate_random_string(length, 1, 1, 1)
-  result = system_instance.register(username, password, password)
+  fName = generate_random_string(8, 1, 0, 0)
+  lName = generate_random_string(8, 1, 0, 0)
+  
+  # simulate 6th user creating an account 
+  with mock.patch('builtins.input', side_effect=['2', username, fName, lName, password, password, username, password, '0', '0']):
+      system_instance.home_page()
+    
   std = capfd.readouterr()
   user_query = "SELECT * FROM accounts WHERE (username, password) = (?, ?)"
   system_instance.cursor.execute(
     user_query, (username, system_instance.encryption(password)))
   account = system_instance.cursor.fetchone()
-  assert result is False and std.out.strip(
-  ) == msg_max_accounts and account is None
+  assert msg_max_accounts in std.out.strip() and account is None
 
   # use a new connection to ensure registered accounts are committed
   system2 = System()
@@ -416,38 +427,48 @@ def test_register_success(system_instance, capfd, temp_remove_accounts):
 def test_register_fail_username(system_instance, capfd, temp_remove_accounts):
   # msg_username_length = "Username must be less than 25 Characters in Length"
   msg_username_length = "Username must be 1-25 Characters in Length"
-  msg_usr_not_unique = "Username has been taken."
+  msg_usr_not_unique = "Username Has Been Taken."
   user_query = "SELECT * FROM accounts WHERE username = ?"
   # username too short (none)
   username = ''
   length = random.randint(8, 12)
   password = generate_random_string(length, 1, 1, 1)
-  result = system_instance.register(username, password, password)
+  fName = generate_random_string(8, 1, 0, 0)
+  lName = generate_random_string(8, 1, 0, 0)
+  
+  with mock.patch('builtins.input', side_effect=['2', username, fName, lName, password, password, username, password, '0', '0']):
+      system_instance.home_page()
+ 
   std = capfd.readouterr()
   system_instance.cursor.execute(user_query, (username, ))
   account = system_instance.cursor.fetchone()
-  assert result is False and std.out.strip(
-  ) == msg_username_length and account is None
+  assert msg_username_length in std.out.strip() and account is None
   # username too long
   length = random.randint(26, 100)
   username = generate_random_string(length, 1, 1, 1)
   length = random.randint(8, 12)
   password = generate_random_string(length, 1, 1, 1)
-  result = system_instance.register(username, password, password)
+  fName = generate_random_string(8, 1, 0, 0)
+  lName = generate_random_string(8, 1, 0, 0)
+  with mock.patch('builtins.input', side_effect=['2', username, fName, lName, password, password, username, password, '0', '0']):
+    system_instance.home_page()
+    
   std = capfd.readouterr()
   system_instance.cursor.execute(user_query, (username, ))
   account = system_instance.cursor.fetchone()
-  assert result is False and std.out.strip(
-  ) == msg_username_length and account is None
+  assert msg_username_length in std.out.strip() and account is None
   # username not unique
   length = random.randint(1, 25)
   username = generate_random_string(length, 1, 0, 0)
   length = random.randint(8, 12)
   password = generate_random_string(length, 1, 1, 1)
   for i in range(2):  # attempt to double register new user
-    registered = system_instance.register(username, password, password)
+    fName = generate_random_string(8, 1, 0, 0)
+    lName = generate_random_string(8, 1, 0, 0)
+    with mock.patch('builtins.input', side_effect=['2', username, fName, lName, password, password, username, password, '0', '0']):
+      system_instance.home_page()
     std = capfd.readouterr()
-  assert registered is False and std.out.strip() == msg_usr_not_unique
+  assert msg_usr_not_unique in std.out.strip()  
 
 
 # tests that registration fails when password is invalid

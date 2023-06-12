@@ -59,6 +59,7 @@ def test_name_prompt(system_instance, capsys):
   assert "Enter First Name:" in captured.out
   assert "Enter Last Name:" in captured.out
 
+
 # Query accounts table for matching first and last name
 @pytest.mark.usefixtures("temp_remove_accounts")
 def test_query_names(system_instance, capsys):
@@ -111,8 +112,7 @@ def test_user_not_located(system_instance, capsys):
   system_instance.initMenu()
 
   # simulate user choosing Find People I Know Option
-  with mock.patch('builtins.input', side_effect=['3', 'John', 'Doe', '0',
-                                                 '0']):
+  with mock.patch('builtins.input', side_effect=['3', 'John', 'Doe', '0','0']):
     system_instance.home_page()
 
   # capture output
