@@ -347,7 +347,7 @@ def test_jobs_table_schema():
         'description': ('TEXT', 0, None, 0),
         'employer': ('VARCHAR(128)', 1, None, 0),
         'location': ('VARCHAR(128)', 1, None, 0),
-        'salary': ('INT(10, 2)', 1, None, 0),
+        'salary': ('INT', 1, None, 0),
         'posterFirstName': ('VARCHAR(128)', 0, None, 0),
         'posterLastName': ('VARCHAR(128)', 0, None, 0)
     }
