@@ -16,14 +16,14 @@ def test_video_option(system_instance, capsys):
   home_page = system_instance.homePage
 
   # assert video option is available
-  assert '5' in home_page.selections, "Selection '5' not found in home page options"
-  assert home_page.selections['5'] == {
+  assert '4' in home_page.selections, "Selection '4' not found in home page options"
+  assert home_page.selections['4'] == {
     'label': 'See Our Success Video',
     'action': system_instance.video_menu
   }
 
   # simulate user choosing video option
-  with mock.patch('builtins.input', side_effect=['5', '0', '0']):
+  with mock.patch('builtins.input', side_effect=['4', '0', '0']):
     system_instance.home_page()
 
   # capture output
