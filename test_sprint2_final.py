@@ -167,7 +167,7 @@ def test_student_success(system_instance, capsys):
   assert home_page.opening == success_story
 
 
-@pytest.fixture
+#@pytest.fixture
 #test that user can input first and last name when registering
 def test_name_register(system_instance, temp_remove_accounts, capsys):
   # username = "test"
@@ -182,12 +182,28 @@ def test_name_register(system_instance, temp_remove_accounts, capsys):
   output = captured.out.split('\n')
   assert output[21] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
 
-def test_name_db(system_instance, temp_remove_accounts, test_name_register):#test that the users first and last name are stored in the db under fName and lName which are the second and third column
+def test_name_db(system_instance, temp_remove_accounts, name_register):#test that the users first and last name are stored in the db under fName and lName which are the second and third column
   fName = "unit"
   cursor = system_instance.conn.cursor()
   cursor.execute('Select * From accounts where fName = (?);', (fName,))
   result = cursor.fetchone()
   assert result[2] == 'unit' and result[3] == 'tests' 
+
+@pytest.fixture
+#test that user can input first and last name when registering
+def name_register(system_instance, temp_remove_accounts, capsys):
+  # username = "test"
+  # fName = "unit"
+  # lName = "tests"
+  # password = "Testing2$"
+  # passwordCheck = "Testing2$"
+  inputs = ['2', 'tester', 'unit', 'tests', 'Testing3!', 'Testing3!', 'tester', 'Testing3!', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  assert output[21] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
+  yield
 
 #@pytest.fixture#test that user can input first and last name when registering
 def test_register(system_instance, capsys, temp_remove_accounts):
@@ -203,7 +219,7 @@ def test_register(system_instance, capsys, temp_remove_accounts):
   assert output[20] == 'Confirm Password: '
   assert output[21] == 'Account created successfully.'
 
-def test_login(system_instance, capsys):
+def test_login(system_instance, capsys, name_register):
   inputs = ['1', 'tester', 'Testing3!', '1', '0', '2', '0', '3', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
@@ -240,8 +256,8 @@ def test_login(system_instance, capsys):
   assert output[48] == '[5] Professional Communication'
   assert output[49] == '[0] Return To Main Menu'
 
-def test_findpeople(system_instance, capsys):
-  inputs = ['2', 'tester', 'unit', 'tests', 'Testing3!', 'Testing3!', 'tester', 'Testing3!', '0','3', 'unit', 'tests', '0', '0']
+def test_findpeople(system_instance, capsys, name_register):
+  inputs = ['3', 'unit', 'tests', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
