@@ -79,7 +79,7 @@ class System:
       description TEXT,
       employer VARCHAR(128) NOT NULL,
       location VARCHAR(128) NOT NULL,
-      salary INT(10, 2) NOT NULL,
+      salary INT NOT NULL,
       posterFirstName VARCHAR(128),
       posterLastName VARCHAR(128)
     );
