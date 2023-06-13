@@ -79,7 +79,7 @@ class System:
       description TEXT,
       employer VARCHAR(128) NOT NULL,
       location VARCHAR(128) NOT NULL,
-      salary DECIMAL(10, 2) NOT NULL,
+      salary INT(10, 2) NOT NULL,
       posterFirstName VARCHAR(128),
       posterLastName VARCHAR(128)
     );
@@ -283,7 +283,7 @@ class System:
     print("Enter Salary: ")
     salary = input()
     ## Validate Inputs
-    if self.validString("Title",title) and self.validString("Description",employer) and self.validString("Employer",employer)and self.validString("Location",location) and self.validPosNum("Salary",salary):
+    if self.validString("Title",title) and self.validString("Description",description) and self.validString("Employer",employer)and self.validString("Location",location) and self.validPosNum("Salary",salary):
       self.cursor.execute("INSERT INTO jobs (title, description,employer,location,salary,posterFirstName,posterLastName) VALUES (?, ?, ?, ?, ?, ?, ?)", (title, description,employer,location,salary,self.user.fName,self.user.lName))
       self.conn.commit() #saving new account to database
       print("Job Posted Successfully.")
@@ -327,9 +327,6 @@ class System:
       print("Coding")
       print("Under Construction")
   def skillE(self):
-      print("Professional Communication")
-      print("Under Construction")
-  def guestSearch(self):
       print("Professional Communication")
       print("Under Construction")
   def initMenu(self):
