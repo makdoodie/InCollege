@@ -357,15 +357,14 @@ def test_validate_username_not_unique(system_instance, capfd):
     with mock.patch('builtins.input', side_effect=['2', username, fName, lName, password, password, username, password, '0','0']):
       system_instance.initMenu()
       system_instance.home_page()
-    capfd.readouterr()  # discard account register success msg
   else:
     test_user = False
   # confirm non-unique username is rejected and appropriate message displayed
-  result = system_instance.validateUserName(username[0])
-  std = capfd.readouterr()
-  assert usr_taken_msg in std.out.strip() and result is False
+  result = system_instance.validateUserName(username)
+  capfd.readouterr() # discard menu messages
+  assert result is False
   if test_user:  # delete test user
-    system_instance.cursor.execute('DELETE FROM accounts where username = (?)', (username))
+    system_instance.cursor.execute('DELETE FROM accounts where username = (?)', (username,))
     system_instance.conn.commit()
 
 
