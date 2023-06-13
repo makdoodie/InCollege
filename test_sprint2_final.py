@@ -255,14 +255,14 @@ def test_findpeople(system_instance, capsys):
   assert output[22] == '[0] Return To Home Page'
 
 def test_success_video(system_instance, capsys):
-  inputs = ['5', '0', '0']
+  inputs = ['4', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert output[17] == 'See Our Success Story:'
-  assert output[18] == '(Playing Video)'
-  assert output[20] == '[0] Exit'
+  assert output[16] == 'See Our Success Story:'
+  assert output[17] == '(Playing Video)'
+  assert output[19] == '[0] Exit'
 
 # test this function: Create a jobs class with members: title, description, employer, location, salary, poster first name and last name.
 def test_job_creation_with_description():
