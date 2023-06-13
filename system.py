@@ -349,8 +349,8 @@ class System:
       self.homePage.setSelection('1',{'label':'Login','action':self.login})
       self.homePage.setSelection('2',{'label':'Register','action':self.register})
       self.homePage.setSelection('3',{'label':'Find People I Know','action':self.findUser})
-      self.homePage.setSelection('4',{'label':'Delete Users','action':self.deleteTable})
-      self.homePage.setSelection('5',{'label':'See Our Success Video','action':self.video_menu})
+      ##self.homePage.setSelection('4',{'label':'Delete Users','action':self.deleteTable})
+      self.homePage.setSelection('4',{'label':'See Our Success Video','action':self.video_menu})
        #For finding people you know
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
