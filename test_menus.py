@@ -75,7 +75,7 @@ def test_login(system_instance, capsys):
   assert output[49] == '[0] Return To Main Menu'
 
 def test_findpeople(system_instance, capsys):
-  inputs = ['3', 'unit', 'tests', '0', '0']
+  inputs = ['2', 'tester', 'unit', 'tests', 'Testing3!', 'Testing3!', 'tester', 'Testing3!', '0','3', 'unit', 'tests', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
