@@ -22,7 +22,7 @@ class Menu:
       self.exitStatement = "Exit"
       self.menuItems = []  # List to store the menu items
       self.functions = []  # List to store the corresponding functions
-      
+      self.visibilities = []
     #destructor
     def __del__(self):
       # print('Menu Deconstructed')
@@ -37,9 +37,10 @@ class Menu:
           
     ## Set Each Menu Item for the menu
     ## addItem function simply takes in menu option name and then function name
-    def addItem(self, item, func):
+    def addItem(self, item, func, vis = True):
         self.menuItems.append(item)
         self.functions.append(func)
+        self.visibilities.append(vis)
     def setOpening(self,opening):
       self.opening = opening
     def setExitStatement(self,exit):
@@ -47,9 +48,10 @@ class Menu:
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
+        visible_options = [(i, item) for i, (item, vis) in enumerate(zip(self.menuItems, self.visibilities), start=1) if vis]
         print(self.opening)
-        for i, item in enumerate(self.menuItems):
-            print(f"{i + 1}. {item}")
+        for i, (index, item) in enumerate(visible_options):
+          print(f"{i + 1}. {item}")
         print("0. Exit")
     # Function to take in number as selection
     def selectOption(self):
@@ -251,6 +253,8 @@ class System:
       if account: #if the username exists, then we check that the password in the database matches the password the user inputted
         hashed_inputpass = self.encryption(password)
         if hashed_inputpass == account[1]:
+          self.privacyMenu.visibilities[self.privacyMenu.menuItems.index('Guest Controls')] = True
+          self.importantLinks.visibilities[self.importantLinks.menuItems.index('Languages')] = True
           print("You Have Successfully Logged In!")
           self.user.login(userName,account[2],account[3])
           self.home_page()
@@ -492,6 +496,7 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       self.mainMenu.addItem('Find A Friend', self.friend_menu)
       self.mainMenu.addItem('Learn A Skill', self.skills_menu)
+      self.mainMenu.addItem('InCollege Important Links', self.important_links)
       self.mainMenu.setExitStatement("Log Out")
       # Set Skill Items
       self.skillsMenu.setOpening("Please Select a Skill:")
@@ -519,7 +524,7 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.importantLinks.addItem('Privacy Policy', self.privacy_menu)
       self.importantLinks.addItem('Cookie Policy', lambda: self.printLink("Cookie Policy"))
       self.importantLinks.addItem('Brand Policy', lambda: self.printLink("Brand Policy"))
-      self.importantLinks.addItem('Languages', self.change_language)
+      self.importantLinks.addItem('Languages', self.change_language, False)
       self.importantLinks.setExitStatement("Return To Home Page")
       # Privacy page
       privacyPolicy = """
@@ -541,10 +546,4 @@ At InCollege, we value your privacy and are committed to protecting your persona
       """
       self.privacyMenu.setOpening(privacyPolicy)
       #need to only show when logged in
-      self.privacyMenu.addItem('Guest Controls', self.guest_controls)
-    
-
-      
-    
-    
-  
+      self.privacyMenu.addItem('Guest Controls', self.guest_controls, self.user.loggedOn)

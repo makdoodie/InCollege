@@ -16,5 +16,3 @@ class User:
     self.fName = ""
     self.lName = ""
     self.loggedOn = False
-  
-    
