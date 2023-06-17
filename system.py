@@ -110,6 +110,8 @@ class System:
     self.skillsMenu = Menu()
     self.joinMenu = Menu()
     self.importantLinks = Menu()
+    self.privacyMenu = Menu()
+    self.guestControls = Menu()
     
   def __del__(self): #closes connection to db
     self.conn.close()
@@ -141,6 +143,10 @@ class System:
       self.skillsMenu.start()
   def important_links(self):
       self.importantLinks.start()
+  def privacy_menu(self):
+      self.privacyMenu.start()
+  def guest_controls(self):
+      self.guestControls.start()
     
   def encryption(self, password):
     sha256 = hashlib.sha256()
@@ -404,27 +410,6 @@ By continuing to use our app, you acknowledge that you have read and agreed to t
 
 ------------------------
 ''',
-            'Privacy Policy': '''
-------------------------
-   PRIVACY POLICY
-------------------------
-
-At InCollege, we value your privacy and are committed to protecting your personal information. Here's a summary of our privacy practices:
-
-1. Information Collection:
-   We collect limited personal information when you register and interact with our platform.
-
-2. Data Usage:
-   We use your information to personalize your experience, deliver relevant content, and improve our services.
-
-3. Data Security:
-   We employ industry-standard security measures to protect your information from unauthorized access.
-
-4. Cookies and Tracking:
-   We may use cookies to enhance your browsing experience.
-------------------------
-
-            ''',
             'Cookie Policy': '''
 ------------------------
    COOKIE POLICY
@@ -454,44 +439,15 @@ InCollege is committed to protecting its brand identity and ensuring consistent 
 Any unauthorized usage of the InCollege brand assets is strictly prohibited.
 
 ------------------------
-''',
-            'Guest Controls': '''
-------------------------
-     GUEST CONTROLS
-------------------------
-
-1. Privacy Settings: Customize the visibility of your profile and activities.
-
-2. Blocking and Reporting: Protect yourself from unwanted interactions by blocking users and reporting abuse.
-
-3. Account Deactivation: Take a break from InCollege or temporarily hide your profile.
-
-4. Password and Account Security: Strengthen your account security with strong passwords and two-factor authentication.
-
-Remember to regularly review and adjust your guest controls to suit your preferences.
-
-------------------------
-''',
-            'Languages': '''
-------------------------
-       LANGUAGES
-------------------------
-
-InCollege supports two languages:
-
-1. English: The default language of InCollege. Enjoy all features and content in English.
-
-2. Spanish: Select Spanish as your preferred language to experience InCollege in Spanish.
-
-------------------------
-'''
-        }
+'''}
         print("You selected:", link)
         print(content[link])
         input("Press Enter to return to the Important Links page")
         self.importantLinks.clear()
         return
 
+  def change_language(self):
+    print("Austin start here")
   
   ## Skills to Learn ##
   def skillA(self):
@@ -560,13 +516,33 @@ InCollege supports two languages:
       self.importantLinks.addItem('About', lambda: self.printLink("About"))
       self.importantLinks.addItem('Accessibility', lambda: self.printLink("Accessibility"))
       self.importantLinks.addItem('User Agreement', lambda: self.printLink("User Agreement"))
-      self.importantLinks.addItem('Privacy Policy', lambda: self.printLink("Privacy Policy"))
+      self.importantLinks.addItem('Privacy Policy', self.privacy_menu)
       self.importantLinks.addItem('Cookie Policy', lambda: self.printLink("Cookie Policy"))
       self.importantLinks.addItem('Brand Policy', lambda: self.printLink("Brand Policy"))
-      self.importantLinks.addItem('Guest Controls', lambda: self.printLink("Guest Controls"))
-      self.importantLinks.addItem('Languages', lambda: self.printLink("Languages"))
+      self.importantLinks.addItem('Languages', self.change_language)
       self.importantLinks.setExitStatement("Return To Home Page")
+      # Privacy page
+      privacyPolicy = """
+------------------------
+   PRIVACY POLICY
+------------------------
 
+At InCollege, we value your privacy and are committed to protecting your personal information. Here's a summary of our privacy practices:
+
+1. Information Collection:
+   We collect limited personal information when you register and interact with our platform.
+
+2. Data Usage:
+   We use your information to personalize your experience, deliver relevant content, and improve our services. We employ industry-standard security measures to protect your information from unauthorized access.
+
+3. Cookies and Tracking:
+   We may use cookies to enhance your browsing experience.
+------------------------
+      """
+      self.privacyMenu.setOpening(privacyPolicy)
+      #need to only show when logged in
+      self.privacyMenu.addItem('Guest Controls', self.guest_controls)
+    
 
       
     
