@@ -611,5 +611,5 @@ At InCollege, we value your privacy and are committed to protecting your persona
       self.usefulLinks.addItem('Directories', self.directories)
       #General links menu navigation links
       self.generalMenu.setOpening('General Links')
-      self.generalMenu.addItem('Sign Up', self.join_menu , False) #finish this
+      self.generalMenu.addItem('Sign Up', self.join_menu , lambda: True if not self.user.loggedOn else False) #finish this
       self.generalMenu.addItem('Help Center', lambda: self.printLink("Help Center"))
