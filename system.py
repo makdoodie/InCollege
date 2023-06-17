@@ -20,7 +20,8 @@ class Menu:
     def __init__(self):
       self.opening = ""
       self.exitStatement = "Exit"
-      self.selections = {}
+      self.menuItems = []  # List to store the menu items
+      self.functions = []  # List to store the corresponding functions
       
     #destructor
     def __del__(self):
@@ -33,9 +34,12 @@ class Menu:
             _ = os.system('cls')
         else:
             _ = os.system('clear')
-    ## Set Each Menu Item for the  
-    def setSelection(self,hotKey,selection):
-      self.selections[hotKey] = selection
+          
+    ## Set Each Menu Item for the menu
+    ## addItem function simply takes in menu option name and then function name
+    def addItem(self, item, func):
+        self.menuItems.append(item)
+        self.functions.append(func)
     def setOpening(self,opening):
       self.opening = opening
     def setExitStatement(self,exit):
@@ -43,29 +47,35 @@ class Menu:
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
-      print(self.opening)
-      for hotKey,selection in self.selections.items():
-        print("["+hotKey+"] "+ selection['label'])
-      print("[0] " + self.exitStatement)
-    ## Display List  
+        print(self.opening)
+        for i, item in enumerate(self.menuItems):
+            print(f"{i + 1}. {item}")
+        print("0. Exit")
+    # Function to take in number as selection
+    def selectOption(self):
+        while True:
+            try:
+                choice = int(input("\nEnter the number of your selection: "))
+                if choice < 0 or choice > len(self.menuItems):
+                    raise ValueError()
+                return choice
+            except ValueError:
+                print("Invalid selection. Please try again.")
     def start(self):
-    ## Main Menu Loop
-      
+    #Main menu loop
       while True:
-        self.displaySelections()
-        selection = input()
-        if(selection == '0'):
-          print("Exiting")
+          #Displays selections and stores what the user chooses
+          self.displaySelections()
+          selection = self.selectOption()
+        
+          if selection == 0:
+            print("Exiting")
+            self.clear()
+            break
           self.clear()
-          break
-        if selection in self.selections:
-          self.clear()
-          thisSelection = self.selections[selection]
-          menuItem = thisSelection['action']
-          menuItem()
-        else:
-          print("Invalid Input. Please Try Again")
- 
+          selected_function = self.functions[selection - 1]
+          selected_function()
+          
 class System:
   def __init__(self): #create and connect to db
     self.conn = sqlite3.connect("accounts.db") #establishes connection to SQLite database called accounts
@@ -502,60 +512,59 @@ InCollege supports two languages:
   def initMenu(self):
       ## Set Home Page Items
       hpOpening = """
-      Welcome To The InCollege Home Page!
+    Welcome To The InCollege Home Page!
       
-      The Place Where Students Take The Next Big Step.
+    The Place Where Students Take The Next Big Step.
 
-      "I Had To Battle With Anxiety Every Day Until I Signed Up For InCollege.
-       Now, My Future Is On The Right Track And Im Able To Apply My Education To My 
-       Dream Career. Finding A Place In My Field Of Study Was A Breeze"
-        - InCollege User
+    "I Had To Battle With Anxiety Every Day Until I Signed Up For InCollege.
+    Now, My Future Is On The Right Track And Im Able To Apply My Education To My Dream Career.
+    Finding A Place In My Field Of Study Was A Breeze"
+    - InCollege User
 
     """
       self.homePage.setOpening(hpOpening)
-      self.homePage.setSelection('1',{'label':'Login','action':self.login})
-      self.homePage.setSelection('2',{'label':'Register','action':self.register})
-      self.homePage.setSelection('3',{'label':'Find People I Know','action':self.findUser})
+      self.homePage.addItem("Login", self.login)
+      self.homePage.addItem("Register", self.register)
+      self.homePage.addItem("Find People I Know", self.findUser)
       ##self.homePage.setSelection('4',{'label':'Delete Users','action':self.deleteTable})
-      self.homePage.setSelection('4',{'label':'See Our Success Video','action':self.video_menu})
-      self.homePage.setSelection('6',{'label':'InCollege Important Links','action':self.important_links})
-       #For finding people you know
+      self.homePage.addItem("See Our Success Video", self.video_menu)
+      self.homePage.addItem('InCollege Important Links', self.important_links)
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
       self.mainMenu.setOpening("Welcome User!")
-      self.mainMenu.setSelection('1',{'label':'Job/Internship Search','action':self.jobs_menu})
-      self.mainMenu.setSelection('2',{'label':'Find A Friend','action':self.friend_menu})
-      self.mainMenu.setSelection('3',{'label':'Learn A Skill','action':self.skills_menu})
+      self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
+      self.mainMenu.addItem('Find A Friend', self.friend_menu)
+      self.mainMenu.addItem('Learn A Skill', self.skills_menu)
       self.mainMenu.setExitStatement("Log Out")
       # Set Skill Items
       self.skillsMenu.setOpening("Please Select a Skill:")
-      self.skillsMenu.setSelection('1',{'label':'Project Management','action':self.skillA})
-      self.skillsMenu.setSelection('2',{'label':'Networking','action':self.skillB})
-      self.skillsMenu.setSelection('3',{'label':'System Design','action':self.skillC})
-      self.skillsMenu.setSelection('4',{'label':'Coding','action':self.skillD})
-      self.skillsMenu.setSelection('5',{'label':'Professional Communication','action':self.skillE})
+      self.skillsMenu.addItem('Project Management',self.skillA)
+      self.skillsMenu.addItem('Networking',self.skillB)
+      self.skillsMenu.addItem('System Design',self.skillC)
+      self.skillsMenu.addItem('Coding',self.skillD)
+      self.skillsMenu.addItem('Professional Communication',self.skillE)
       self.skillsMenu.setExitStatement("Return To Main Menu")
       # Set Join Items
       self.joinMenu.setOpening("Would You Like To Join Your Friends On InCollege?")
-      self.joinMenu.setSelection('1',{'label':'Login','action':self.login})
-      self.joinMenu.setSelection('2',{'label':'Register','action':self.register})
+      self.joinMenu.addItem('Login',self.login)
+      self.joinMenu.addItem('Register',self.register)
       self.joinMenu.setExitStatement("Return To Home Page")
       # Set Post A Job Items
       self.jobsMenu.setOpening("Welcome to the Job Postings Page")
-      self.jobsMenu.setSelection('1',{'label':'Post Job','action':self.postJob})
+      self.jobsMenu.addItem('Post Job',self.postJob)
       self.jobsMenu.setExitStatement("Return To Main Menu")
       # Set InCollege Important Links
       self.importantLinks.setOpening("Welcome to the Important Links Page")
-      self.importantLinks.setSelection('1', {'label': 'Copyright Notice', 'action': lambda: self.printLink("Copyright Notice")})
-      self.importantLinks.setSelection('2', {'label': 'About', 'action': lambda: self.printLink("About")})
-      self.importantLinks.setSelection('3', {'label': 'Accessibility', 'action': lambda: self.printLink("Accessibility")})
-      self.importantLinks.setSelection('4', {'label': 'User Agreement', 'action': lambda: self.printLink("User Agreement")})
-      self.importantLinks.setSelection('5', {'label': 'Privacy Policy', 'action': lambda: self.printLink("Privacy Policy")})
-      self.importantLinks.setSelection('6', {'label': 'Cookie Policy', 'action': lambda: self.printLink("Cookie Policy")})
-      self.importantLinks.setSelection('7', {'label': 'Brand Policy', 'action': lambda: self.printLink("Brand Policy")})
-      self.importantLinks.setSelection('8', {'label': 'Guest Controls', 'action': lambda: self.printLink("Guest Controls")})
-      self.importantLinks.setSelection('9', {'label': 'Languages', 'action': lambda: self.printLink("Languages")})
+      self.importantLinks.addItem('Copyright Notice', lambda: self.printLink("Copyright Notice"))
+      self.importantLinks.addItem('About', lambda: self.printLink("About"))
+      self.importantLinks.addItem('Accessibility', lambda: self.printLink("Accessibility"))
+      self.importantLinks.addItem('User Agreement', lambda: self.printLink("User Agreement"))
+      self.importantLinks.addItem('Privacy Policy', lambda: self.printLink("Privacy Policy"))
+      self.importantLinks.addItem('Cookie Policy', lambda: self.printLink("Cookie Policy"))
+      self.importantLinks.addItem('Brand Policy', lambda: self.printLink("Brand Policy"))
+      self.importantLinks.addItem('Guest Controls', lambda: self.printLink("Guest Controls"))
+      self.importantLinks.addItem('Languages', lambda: self.printLink("Languages"))
       self.importantLinks.setExitStatement("Return To Home Page")
 
 
