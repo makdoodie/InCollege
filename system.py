@@ -186,6 +186,7 @@ class System:
     self.privacyMenu = Menu()
     self.guestControls = Menu()
     self.generalMenu = Menu()
+    self.quickMenu = Menu() # generic menu used to display content to user with no selections
     
   def __del__(self): #closes connection to db
     self.conn.close()
@@ -205,6 +206,21 @@ class System:
      self.mainMenu.start()
      self.user.logout()
      
+
+  def quick_menu(self, opening, exit='Back'):
+    """
+    Allows the caller to display text to the user in a simple menu with no selections.
+    
+    Args:
+      opening (str): The menu's opening statement.
+      exit (str): Optional label for the menu's exit statement/hotkey. The default is 'Back'. 
+    """
+    
+    self.quickMenu.setOpening(opening)
+    self.quickMenu.setExitStatement(exit)
+    self.quickMenu.start()
+
+  
   def main_menu(self):
       self.mainMenu.start()
   def jobs_menu(self):
@@ -721,3 +737,5 @@ At InCollege, we value your privacy and are committed to protecting your persona
       self.generalMenu.setOpening('General Links')
       self.generalMenu.addItem('Sign Up', self.join_menu , lambda: True if not self.user.loggedOn else False) #finish this
       self.generalMenu.addItem('Help Center', lambda: self.printLink("Help Center"))
+
+      self.importantLinks.addItem('New Option', lambda: self.quick_menu('This is the info I want to display to the user.\n'))
