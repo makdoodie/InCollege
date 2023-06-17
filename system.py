@@ -20,9 +20,10 @@ class Menu:
     def __init__(self):
       self.opening = ""
       self.exitStatement = "Exit"
-      self.menuItems = []  # List to store the menu items
-      self.functions = []  # List to store the corresponding functions
-      self.visibilities = []
+      self.selections = []  # full list of selections(label, action, visibiliity) for the menu
+      self.currSelections = [] # dyanmic list of menu selections that is updated every iteration of the menu
+
+  
     #destructor
     def __del__(self):
       # print('Menu Deconstructed')
@@ -39,25 +40,34 @@ class Menu:
     ## Set Each Menu Item for the menu
     ## addItem function simply takes in menu option name and then function name
     def addItem(self, item, func, vis = lambda: True):
-        self.menuItems.append(item)
-        self.functions.append(func)
-        self.visibilities.append(vis)
+        self.selections.append({'label': item, 'action': func, 'visible': vis})
+
+  
     def setOpening(self,opening):
       self.opening = opening
+
+  
     def setExitStatement(self,exit):
       self.exitStatement = exit
 
+
+    def getValidSelections(self):
+      """
+      Generates a list of valid selections for the menu based on 
+      the current visibility of each selection in the menu's full list of selections
+      """
+      return [sel for sel in self.selections if sel['visible']()]
   
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
-        visible_options = [(i, item) for i, (item, vis) in enumerate(zip(self.menuItems, self.visibilities), start=1) if vis()]
         print(self.opening)
-        for index, item in visible_options:
-          if callable(item):  # allow functions to be used as dynamic labels
-            item = item()
-          print(f"{index}. {item}")
-        print(f"0. {self.exitStatement}")
+        for idx, sel in enumerate(self.currSelections, start=1):
+          label = sel['label']
+          if callable(label):  # allow functions to be used as dynamic labels
+            label = label()
+          print(f"[{idx}] {label}")
+        print(f"[0] {self.exitStatement}")
 
   
     # Function to take in number as selection
@@ -65,7 +75,7 @@ class Menu:
         while True:
             try:
                 choice = int(input("\nEnter the number of your selection: "))
-                if choice < 0 or choice > len(self.menuItems):
+                if choice < 0 or choice > len(self.currSelections):
                     raise ValueError()
                 return choice
             except ValueError:
@@ -76,6 +86,7 @@ class Menu:
     #Main menu loop
       selection = None
       while True:
+        self.currSelections = self.getValidSelections()
         if selection is None:  # skip displaying menu & prompting user if previous selection set new selection
           #Displays selections and stores what the user chooses
           self.displaySelections()
@@ -89,8 +100,8 @@ class Menu:
           selection = selection()
         else:
           self.clear()
-          selected_function = self.functions[selection - 1]
-          selection = selected_function() # current function may return a new selection
+          selection = self.currSelections[selection - 1]
+          selection = selection['action']() # current function may return a new selection
 
 
 
