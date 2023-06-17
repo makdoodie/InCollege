@@ -112,8 +112,10 @@ class System:
     self.skillsMenu = Menu()
     self.joinMenu = Menu()
     self.importantLinks = Menu()
+    self.usefulLinks = Menu()
     self.privacyMenu = Menu()
     self.guestControls = Menu()
+    self.generalMenu = Menu()
     
   def __del__(self): #closes connection to db
     self.conn.close()
@@ -149,6 +151,10 @@ class System:
       self.privacyMenu.start()
   def guest_controls(self):
       self.guestControls.start()
+  def useful_links(self):
+      self.usefulLinks.start()
+  def general_menu(self):
+      self.generalMenu.start()
     
   def encryption(self, password):
     sha256 = hashlib.sha256()
@@ -452,6 +458,26 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
 
   def change_language(self):
     print("Austin start here")
+
+  #Under useful links
+  def browse(self):
+      print("Browse InCollege")
+      print("Under Construction")
+      input("Press Enter to return to the Useful Links page")
+      self.importantLinks.clear()
+      return
+  def solutions(self):
+      print("Business Solutions")
+      print("Under Construction")
+      input("Press Enter to return to the Useful Links page")
+      self.importantLinks.clear()
+      return
+  def directories(self):
+      print("Directories")
+      print("Under Construction")
+      input("Press Enter to return to the Useful Links page")
+      self.importantLinks.clear()
+      return
   
   ## Skills to Learn ##
   def skillA(self):
@@ -488,6 +514,7 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.homePage.addItem("Find People I Know", self.findUser)
       ##self.homePage.setSelection('4',{'label':'Delete Users','action':self.deleteTable})
       self.homePage.addItem("See Our Success Video", self.video_menu)
+      self.homePage.addItem('Useful Links', self.useful_links)
       self.homePage.addItem('InCollege Important Links', self.important_links)
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
@@ -496,6 +523,7 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       self.mainMenu.addItem('Find A Friend', self.friend_menu)
       self.mainMenu.addItem('Learn A Skill', self.skills_menu)
+      self.mainMenu.addItem('Useful Links', self.useful_links)
       self.mainMenu.addItem('InCollege Important Links', self.important_links)
       self.mainMenu.setExitStatement("Log Out")
       # Set Skill Items
@@ -544,6 +572,13 @@ At InCollege, we value your privacy and are committed to protecting your persona
    We may use cookies to enhance your browsing experience.
 ------------------------
       """
+      #Privacy menu just to have the option for guest controls if logged in
       self.privacyMenu.setOpening(privacyPolicy)
-      #need to only show when logged in
       self.privacyMenu.addItem('Guest Controls', self.guest_controls, self.user.loggedOn)
+      #Useful links menu
+      self.usefulLinks.setOpening("Welcome to the Useful Links Page")
+      self.usefulLinks.addItem('General', self.general_menu)
+      self.usefulLinks.addItem('Browse InCollege', self.browse)
+      self.usefulLinks.addItem('Business Solutions', self.solutions)
+      self.usefulLinks.addItem('Directories', self.directories)
+      #General links menu navigation links
