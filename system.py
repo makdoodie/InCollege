@@ -34,10 +34,11 @@ class Menu:
             _ = os.system('cls')
         else:
             _ = os.system('clear')
-          
+
+  
     ## Set Each Menu Item for the menu
     ## addItem function simply takes in menu option name and then function name
-    def addItem(self, item, func, vis = True):
+    def addItem(self, item, func, vis = lambda: True):
         self.menuItems.append(item)
         self.functions.append(func)
         self.visibilities.append(vis)
@@ -45,14 +46,20 @@ class Menu:
       self.opening = opening
     def setExitStatement(self,exit):
       self.exitStatement = exit
+
+  
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
-        visible_options = [(i, item) for i, (item, vis) in enumerate(zip(self.menuItems, self.visibilities), start=1) if vis]
+        visible_options = [(i, item) for i, (item, vis) in enumerate(zip(self.menuItems, self.visibilities), start=1) if vis()]
         print(self.opening)
-        for i, (index, item) in enumerate(visible_options):
-          print(f"{i + 1}. {item}")
-        print("0. Exit")
+        for index, item in visible_options:
+          if callable(item):  # allow functions to be used as dynamic labels
+            item = item()
+          print(f"{index}. {item}")
+        print(f"0. {self.exitStatement}")
+
+  
     # Function to take in number as selection
     def selectOption(self):
         while True:
@@ -63,21 +70,30 @@ class Menu:
                 return choice
             except ValueError:
                 print("Invalid selection. Please try again.")
+
+  
     def start(self):
     #Main menu loop
+      selection = None
       while True:
+        if selection is None:  # skip displaying menu & prompting user if previous selection set new selection
           #Displays selections and stores what the user chooses
           self.displaySelections()
           selection = self.selectOption()
         
-          if selection == 0:
-            print("Exiting")
-            self.clear()
-            break
+        if selection == 0:
+          print("Exiting")
+          self.clear()
+          break
+        elif callable(selection):  # the previous selection returned another function
+          selection = selection()
+        else:
           self.clear()
           selected_function = self.functions[selection - 1]
-          selected_function()
-          
+          selection = selected_function() # current function may return a new selection
+
+
+
 class System:
   def __init__(self): #create and connect to db
     self.conn = sqlite3.connect("accounts.db") #establishes connection to SQLite database called accounts
@@ -259,8 +275,6 @@ class System:
       if account: #if the username exists, then we check that the password in the database matches the password the user inputted
         hashed_inputpass = self.encryption(password)
         if hashed_inputpass == account[1]:
-          self.privacyMenu.visibilities[self.privacyMenu.menuItems.index('Guest Controls')] = True
-          self.importantLinks.visibilities[self.importantLinks.menuItems.index('Languages')] = True
           print("You Have Successfully Logged In!")
           self.user.login(userName,account[2],account[3])
           self.home_page()
@@ -552,7 +566,7 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.importantLinks.addItem('Privacy Policy', self.privacy_menu)
       self.importantLinks.addItem('Cookie Policy', lambda: self.printLink("Cookie Policy"))
       self.importantLinks.addItem('Brand Policy', lambda: self.printLink("Brand Policy"))
-      self.importantLinks.addItem('Languages', self.change_language, False)
+      self.importantLinks.addItem('Languages', self.change_language, lambda: True if self.user.loggedOn else False)
       self.importantLinks.setExitStatement("Return To Home Page")
       # Privacy page
       privacyPolicy = """
@@ -574,7 +588,7 @@ At InCollege, we value your privacy and are committed to protecting your persona
       """
       #Privacy menu just to have the option for guest controls if logged in
       self.privacyMenu.setOpening(privacyPolicy)
-      self.privacyMenu.addItem('Guest Controls', self.guest_controls, self.user.loggedOn)
+      self.privacyMenu.addItem('Guest Controls', self.guest_controls, lambda: True if self.user.loggedOn else False)
       #Useful links menu
       self.usefulLinks.setOpening("Welcome to the Useful Links Page")
       self.usefulLinks.addItem('General', self.general_menu)
