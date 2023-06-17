@@ -4,6 +4,10 @@ import hashlib
 from user import User
 import os
 
+#list of languages currently supported by InCollege
+LANGUAGES = ('English', 'Spanish')
+MSG_ERR_RETRY = "Your Request Could Not Be Competed at This Time.\nPlease Try Again Later."
+
 class Jobs:
     def __init__(self, title, employer, location, salary, posterFirstName, posterLastName, description=None):
         self.title = title
@@ -128,6 +132,45 @@ class System:
     
     # Commit the transaction
     self.conn.commit()
+
+    #create account settings table
+    table_acc_settings = """
+    CREATE TABLE IF NOT EXISTS account_settings (
+      username VARCHAR(25) PRIMARY KEY, 
+      email BOOLEAN,
+      sms BOOLEAN,
+      targetedAds BOOLEAN,
+      language VARCHAR(12),
+      FOREIGN KEY(username) REFERENCES accounts(username));
+    """
+    self.cursor.execute(table_acc_settings)
+    self.conn.commit()
+
+    #create trigger add account settings trigger on accounts table
+    default_lang = LANGUAGES[0].replace("'", "''")
+    default_lang = f"'{default_lang}'"
+    trigger_add_settings = f"""
+    CREATE TRIGGER IF NOT EXISTS add_acc_settings
+    AFTER INSERT ON accounts
+    BEGIN
+      INSERT INTO account_settings (username, email, sms, targetedAds, language)
+      VALUES(NEW.username, True, True, True, {default_lang});
+    END;
+    """
+    self.cursor.execute(trigger_add_settings)
+    self.conn.commit()
+
+    #create trigger remove account settings trigger on accounts table
+    trigger_add_settings = """
+    CREATE TRIGGER IF NOT EXISTS rm_acc_settings
+    AFTER DELETE ON accounts
+    BEGIN
+      DELETE FROM account_settings WHERE username = OLD.username;
+    END;
+    """
+    self.cursor.execute(trigger_add_settings)
+    self.conn.commit()
+    
     ## Instantiate User Class Here
     self.user = User("guest","","",False)
     ## Menus
@@ -280,20 +323,30 @@ class System:
       print("Enter Password: ")
       password = input()
       ##Validate User Name and Password then Search
-      self.cursor.execute("SELECT * FROM accounts WHERE username = ?", (userName,)) 
+      acc_fields = 'username, password, fName, lName, email, sms, targetedAds, language'
+      select_account = f"""
+        SELECT {acc_fields} FROM accounts NATURAL JOIN account_settings WHERE username = (?)
+      """
+      self.cursor.execute(select_account, (userName,)) 
       #? is placeholder for username
       account = self.cursor.fetchone() #fetches first row which query returns
       if account: #if the username exists, then we check that the password in the database matches the password the user inputted
         hashed_inputpass = self.encryption(password)
         if hashed_inputpass == account[1]:
           print("You Have Successfully Logged In!")
-          self.user.login(userName,account[2],account[3])
-          self.home_page()
+          self.user.login(userName,
+                          fName=account[2],
+                          lName=account[3], 
+                          email=account[4], 
+                          sms=account[5], 
+                          targetedAds=account[6], 
+                          language=account[7])
+          return self.home_page
         else:
           print("Invalid Username/Password, Try Again!")
       else:
         print("Account Not Found, Check Username/Password.")
-      
+
   def register(self):
     ## Set Account Limit
     if self.countRows("accounts") >= 5:
@@ -315,8 +368,7 @@ class System:
       self.cursor.execute("INSERT INTO accounts (username, password,fName,lName) VALUES (?, ?, ?, ?)", (username, encrypted_pass,fName,lName))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
-      self.login()
-      return 
+      return self.login
     else:
       print("Account Creation Failed.")
     return
@@ -361,12 +413,60 @@ class System:
         ## If the user is found, print 
         if len(result) > 0:
             print("They Are Part Of The InCollege System.")
-            self.join_menu()
+            return self.join_menu
         else:
             print("They Are Not Yet A Part Of The InCollege System.")
         
     else:
       print("Invalid Name Given. Please Try Again.")
+
+  def setUserEmail(self):
+    """
+    Toggles the user's email setting between True (ON) and False (OFF). 
+    If an exception occurs when updating the DB then no change is made, 
+    and a message is displayed informing the user to try again later.
+    """
+    username = self.user.userName
+    newEmail = not self.user.email
+    update = 'UPDATE account_settings SET email = ? WHERE username = ?'
+    try:
+      self.cursor.execute(update, (newEmail, username))
+      self.conn.commit()
+      self.user.email = newEmail
+    except Exception:
+      print(MSG_ERR_RETRY)
+
+  def setUserSMS(self):
+    """
+    Toggles the user's sms setting between True (ON) and False (OFF). 
+    If an exception occurs when updating the DB then no change is made, 
+    and a message is displayed informing the user to try again later.
+    """
+    username = self.user.userName
+    newSMS = not self.user.sms
+    update = 'UPDATE account_settings SET sms = ? WHERE username = ?'
+    try:
+      self.cursor.execute(update, (newSMS, username))
+      self.conn.commit()
+      self.user.sms = newSMS
+    except Exception:
+      print(MSG_ERR_RETRY)
+
+  def setUserTargetedAds(self):
+    """
+    Toggles the user's targeted advertising setting between True (ON) and False (OFF). 
+    If an exception occurs when updating the DB then no change is made, 
+    and a message is displayed informing the user to try again later.
+    """
+    username = self.user.userName
+    newtargetedAds = not self.user.targetedAds
+    update = 'UPDATE account_settings SET targetedAds = ? WHERE username = ?'
+    try:
+      self.cursor.execute(update, (newtargetedAds, username))
+      self.conn.commit()
+      self.user.targetedAds = newtargetedAds
+    except Exception:
+      print(MSG_ERR_RETRY)
 
   ## Function for the important links to print
   def printLink(self, link):
@@ -582,6 +682,14 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.importantLinks.addItem('Brand Policy', lambda: self.printLink("Brand Policy"))
       self.importantLinks.addItem('Languages', self.change_language, lambda: True if self.user.loggedOn else False)
       self.importantLinks.setExitStatement("Return To Home Page")
+      # set Guest Controls Items  
+      self.guestControls.setOpening("Account Preferences:\n")
+      self.guestControls.addItem((lambda: f"Email [{'ON' if self.user.email else 'OFF'}]"), self.setUserEmail)
+      self.guestControls.addItem((lambda: f"SMS [{'ON' if self.user.sms else 'OFF'}]"), self.setUserSMS)
+      self.guestControls.addItem(
+        (lambda: f"Targeted Advertising [{'ON' if self.user.targetedAds else 'OFF'}]"), 
+        self.setUserTargetedAds)
+      self.guestControls.setExitStatement("Back")
       # Privacy page
       privacyPolicy = """
 ------------------------
