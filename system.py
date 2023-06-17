@@ -474,7 +474,10 @@ InCollege is committed to protecting its brand identity and ensuring consistent 
 Any unauthorized usage of the InCollege brand assets is strictly prohibited.
 
 ------------------------
-'''}
+''',
+            'Help Center': '''
+            We're here to help
+            '''}
         print("You selected:", link)
         print(content[link])
         input("Press Enter to return to the Important Links page")
@@ -607,3 +610,6 @@ At InCollege, we value your privacy and are committed to protecting your persona
       self.usefulLinks.addItem('Business Solutions', self.solutions)
       self.usefulLinks.addItem('Directories', self.directories)
       #General links menu navigation links
+      self.generalMenu.setOpening('General Links')
+      self.generalMenu.addItem('Sign Up', self.join_menu , False) #finish this
+      self.generalMenu.addItem('Help Center', lambda: self.printLink("Help Center"))
