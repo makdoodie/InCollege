@@ -65,7 +65,7 @@ class Menu:
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
-        print(self.opening)
+        print(f"{self.opening}\n")
         for idx, sel in enumerate(self.currSelections, start=1):
           label = sel['label']
           if callable(label):  # allow functions to be used as dynamic labels
@@ -187,6 +187,7 @@ class System:
     self.guestControls = Menu()
     self.generalMenu = Menu()
     self.quickMenu = Menu() # generic menu used to display content to user with no selections
+    self.languageMenu = Menu()
     
   def __del__(self): #closes connection to db
     self.conn.close()
@@ -241,6 +242,8 @@ class System:
       self.usefulLinks.start()
   def general_menu(self):
       self.generalMenu.start()
+  def language_menu(self):
+      self.languageMenu.start()
     
   def encryption(self, password):
     sha256 = hashlib.sha256()
@@ -484,6 +487,24 @@ class System:
     except Exception:
       print(MSG_ERR_RETRY)
 
+  def setUserLanguage(self, language):
+    """
+    Sets the user's language setting to the specified language. 
+    If an exception occurs when updating the DB then no change is made, 
+    and a message is displayed informing the user to try again later.
+    
+    Args:
+      language (str): A language from the system's LANGUAGES list.
+    """
+    uName = self.user.userName
+    update = 'UPDATE account_settings SET language = ? WHERE username = ?' 
+    try:
+        self.cursor.execute(update, (language, uName))
+        self.conn.commit()
+        self.user.language = language
+    except Exception:
+        print(MSG_ERR_RETRY)
+
   ## Function for the important links to print
   def printLink(self, link):
         content = {
@@ -600,9 +621,6 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
         self.importantLinks.clear()
         return
 
-  def change_language(self):
-    print("Austin start here")
-
   #Under useful links
   def browse(self):
       print("Browse InCollege")
@@ -696,9 +714,9 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.importantLinks.addItem('Privacy Policy', self.privacy_menu)
       self.importantLinks.addItem('Cookie Policy', lambda: self.printLink("Cookie Policy"))
       self.importantLinks.addItem('Brand Policy', lambda: self.printLink("Brand Policy"))
-      self.importantLinks.addItem('Languages', self.change_language, lambda: True if self.user.loggedOn else False)
+      self.importantLinks.addItem('Languages', self.language_menu, lambda: True if self.user.loggedOn else False)
       self.importantLinks.setExitStatement("Return To Home Page")
-      # set Guest Controls Items  
+      # Set Guest Controls Items  
       self.guestControls.setOpening("Account Preferences:\n")
       self.guestControls.addItem((lambda: f"Email [{'ON' if self.user.email else 'OFF'}]"), self.setUserEmail)
       self.guestControls.addItem((lambda: f"SMS [{'ON' if self.user.sms else 'OFF'}]"), self.setUserSMS)
@@ -706,6 +724,19 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
         (lambda: f"Targeted Advertising [{'ON' if self.user.targetedAds else 'OFF'}]"), 
         self.setUserTargetedAds)
       self.guestControls.setExitStatement("Back")
+      # Set Languages Items
+      self.languageMenu.setOpening("Languages:")
+      for language in LANGUAGES:
+        """give parameter to lambda functions here 
+        as workaround for python's lambda function late binding issue 
+        otherwise all menu items will be created with the last language in the list """
+        label = lambda lang=language: f"{lang} [{'X' if self.user.language == lang else ' '}]"
+        action = lambda lang=language: self.setUserLanguage(lang)
+        self.languageMenu.addItem(label, action)
+      
+      for sel in self.languageMenu.selections:
+        print(sel['label']())
+      self.languageMenu.setExitStatement("Back")
       # Privacy page
       privacyPolicy = """
 ------------------------
@@ -737,5 +768,4 @@ At InCollege, we value your privacy and are committed to protecting your persona
       self.generalMenu.setOpening('General Links')
       self.generalMenu.addItem('Sign Up', self.join_menu , lambda: True if not self.user.loggedOn else False) #finish this
       self.generalMenu.addItem('Help Center', lambda: self.printLink("Help Center"))
-
-      self.importantLinks.addItem('New Option', lambda: self.quick_menu('This is the info I want to display to the user.\n'))
+    
