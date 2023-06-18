@@ -709,7 +709,7 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       self.languageMenu.setOpening("Languages:")
       for language in LANGUAGES:
         """give parameter to lambda functions here 
-        as workaround for python's lambda function late binding issue 
+        as workaround for python's lambda function late binding feature 
         otherwise all menu items will be created with the last language in the list """
         label = lambda lang=language: f"{lang} [{'X' if self.user.language == lang else ' '}]"
         action = lambda lang=language: self.setUserLanguage(lang)
