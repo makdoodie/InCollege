@@ -30,7 +30,7 @@ def account_settings():
     cursor.execute("INSERT INTO accounts (username, password, fName, lName) VALUES (?, ?, ?, ?)", ('username', "Password123!", "Patrick","Shugerts"))
     conn.commit()
     conn.close()
-
+    system.user.login("username","Patrick","Shugerts",True,True,True,"English")
     # Return the system instance for the test
     return system
 @pytest.fixture #removes existing accounts from db while testing
@@ -64,6 +64,8 @@ def test_menu_navigation_to_useful_links(system_instance,capsys):
     assert 'Business Solutions' in captured.out
     assert 'Directories' in captured.out
     assert 'Exit' in captured.out
+
+def test_menu_navi_ul_
      
 def test_user_setting_init(system_instance):
     # Test Initial Settings in Guest User
@@ -104,6 +106,7 @@ def test_set_sms(account_settings):
   # Ensure the user's SMS setting is initially True
   assert account_settings.user.sms == True
   # Perform the test by calling the relevant method on account_settings
+  assert account_settings.user.loggedOn == True
   account_settings.setUserSMS()
   # Grab the user's SMS setting toconfirm update
   conn = sqlite3.connect("accounts.db")
@@ -118,6 +121,7 @@ def test_set_sms(account_settings):
 def test_set_targetedAds(account_settings):
   # Ensure the user's SMS setting is initially True
   assert account_settings.user.targetedAds == True
+  assert account_settings.user.loggedOn == True
   # Perform the test by calling the relevant method on account_settings
   account_settings.setUserTargetedAds()
   # Grab the user's SMS setting toconfirm update
@@ -134,6 +138,7 @@ def test_set_email(account_settings):
   # Ensure the user's SMS setting is initially True
   assert account_settings.user.email == True
   # Perform the test by calling the relevant method on account_settings
+  assert account_settings.user.loggedOn == True
   account_settings.setUserEmail()
   # Grab the user's setting to confirm update
   conn = sqlite3.connect("accounts.db")
