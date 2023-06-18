@@ -65,7 +65,7 @@ class Menu:
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
-        print(self.opening)
+        print(f"{self.opening}\n")
         for idx, sel in enumerate(self.currSelections, start=1):
           label = sel['label']
           if callable(label):  # allow functions to be used as dynamic labels
@@ -199,10 +199,12 @@ class System:
      self.mainMenu.start()
      self.user.logout()
      
-  def join_menu(self):
-   if not(self.user.loggedOn):
+  def join_menu(self, opening = "Would You Like To Join Your Friends On InCollege?", exit = "Return To Home Page"):
+    self.joinMenu.setOpening(opening)
+    self.joinMenu.setExitStatement(exit)
+    if not(self.user.loggedOn):
      self.joinMenu.start()
-   else:
+    else:
      self.mainMenu.start()
      self.user.logout()
      
@@ -485,9 +487,8 @@ class System:
       print(MSG_ERR_RETRY)
 
   ## Function for the important links to print
-  def printLink(self, link):
-        content = {
-            'Copyright Notice': '''
+  content = {
+'Copyright Notice': '''
 ---------------------------
       COPYRIGHT NOTICE
 ---------------------------
@@ -502,7 +503,7 @@ By accessing and using the InCollege website, you agree to comply with all appli
 
 ---------------------------
 ''',
-            'About': '''
+'About': '''
 --------------------------------------
                ABOUT US
 --------------------------------------
@@ -517,7 +518,7 @@ Join our vibrant community today and embark on an exciting journey of personal g
 
 --------------------------------------
 ''',
-            'Accessibility': '''
+'Accessibility': '''
 ------------------------
 ACCESSIBILITY STATEMENT
 ------------------------
@@ -535,7 +536,7 @@ We value your feedback and are continuously working to improve the accessibility
 
 ------------------------
 ''',
-            'User Agreement': '''
+'User Agreement': '''
 ------------------------
     USER AGREEMENT
 ------------------------
@@ -561,7 +562,7 @@ By continuing to use our app, you acknowledge that you have read and agreed to t
 
 ------------------------
 ''',
-            'Cookie Policy': '''
+'Cookie Policy': '''
 ------------------------
    COOKIE POLICY
 ------------------------
@@ -576,7 +577,7 @@ At InCollege, we use cookies to enhance your browsing experience and improve our
    - Advertising: Cookies may be used to display relevant ads based on your interests.
 ------------------------
 ''',
-            'Brand Policy': '''
+'Brand Policy': '''
 ------------------------
      BRAND POLICY
 ------------------------
@@ -591,38 +592,20 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
 
 ------------------------
 ''',
-            'Help Center': '''
-            We're here to help
-            '''}
-        print("You selected:", link)
-        print(content[link])
-        input("Press Enter to return to the Important Links page")
-        self.importantLinks.clear()
-        return
+'Help Center': '''
+We're here to help
+''',
+'General About': '''
+In College: Welcome to In College, the world's largest college student
+network with many users in many countries and territories worldwide
+''',
+'Press': '''
+In College Pressroom: Stay on top of the latest news, updates, and reports
+'''}
 
   def change_language(self):
     print("Austin start here")
 
-  #Under useful links
-  def browse(self):
-      print("Browse InCollege")
-      print("Under Construction")
-      input("Press Enter to return to the Useful Links page")
-      self.importantLinks.clear()
-      return
-  def solutions(self):
-      print("Business Solutions")
-      print("Under Construction")
-      input("Press Enter to return to the Useful Links page")
-      self.importantLinks.clear()
-      return
-  def directories(self):
-      print("Directories")
-      print("Under Construction")
-      input("Press Enter to return to the Useful Links page")
-      self.importantLinks.clear()
-      return
-  
   ## Skills to Learn ##
   def skillA(self):
       print("Project Management")
@@ -679,23 +662,21 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
       self.skillsMenu.addItem('Professional Communication',self.skillE)
       self.skillsMenu.setExitStatement("Return To Main Menu")
       # Set Join Items
-      self.joinMenu.setOpening("Would You Like To Join Your Friends On InCollege?")
       self.joinMenu.addItem('Login',self.login)
       self.joinMenu.addItem('Register',self.register)
-      self.joinMenu.setExitStatement("Return To Home Page")
       # Set Post A Job Items
       self.jobsMenu.setOpening("Welcome to the Job Postings Page")
       self.jobsMenu.addItem('Post Job',self.postJob)
       self.jobsMenu.setExitStatement("Return To Main Menu")
       # Set InCollege Important Links
       self.importantLinks.setOpening("Welcome to the Important Links Page")
-      self.importantLinks.addItem('Copyright Notice', lambda: self.printLink("Copyright Notice"))
-      self.importantLinks.addItem('About', lambda: self.printLink("About"))
-      self.importantLinks.addItem('Accessibility', lambda: self.printLink("Accessibility"))
-      self.importantLinks.addItem('User Agreement', lambda: self.printLink("User Agreement"))
+      self.importantLinks.addItem('Copyright Notice', lambda: self.quick_menu(System.content["Copyright Notice"]))
+      self.importantLinks.addItem('About', lambda: self.quick_menu(System.content["About"]))
+      self.importantLinks.addItem('Accessibility', lambda: self.quick_menu(System.content["Accessibility"]))
+      self.importantLinks.addItem('User Agreement', lambda: self.quick_menu(System.content["User Agreement"]))
       self.importantLinks.addItem('Privacy Policy', self.privacy_menu)
-      self.importantLinks.addItem('Cookie Policy', lambda: self.printLink("Cookie Policy"))
-      self.importantLinks.addItem('Brand Policy', lambda: self.printLink("Brand Policy"))
+      self.importantLinks.addItem('Cookie Policy', lambda: self.quick_menu(System.content["Cookie Policy"]))
+      self.importantLinks.addItem('Brand Policy', lambda: self.quick_menu(System.content["Brand Policy"]))
       self.importantLinks.addItem('Languages', self.change_language, lambda: True if self.user.loggedOn else False)
       self.importantLinks.setExitStatement("Return To Home Page")
       # set Guest Controls Items  
@@ -730,12 +711,16 @@ At InCollege, we value your privacy and are committed to protecting your persona
       #Useful links menu
       self.usefulLinks.setOpening("Welcome to the Useful Links Page")
       self.usefulLinks.addItem('General', self.general_menu)
-      self.usefulLinks.addItem('Browse InCollege', self.browse)
-      self.usefulLinks.addItem('Business Solutions', self.solutions)
-      self.usefulLinks.addItem('Directories', self.directories)
+      self.usefulLinks.addItem('Browse InCollege', lambda: self.quick_menu("Under Construction"))
+      self.usefulLinks.addItem('Business Solutions', lambda: self.quick_menu("Under Construction"))
+      self.usefulLinks.addItem('Directories', lambda: self.quick_menu("Under Construction"))
       #General links menu navigation links
       self.generalMenu.setOpening('General Links')
-      self.generalMenu.addItem('Sign Up', self.join_menu , lambda: True if not self.user.loggedOn else False) #finish this
-      self.generalMenu.addItem('Help Center', lambda: self.printLink("Help Center"))
-
-      self.importantLinks.addItem('New Option', lambda: self.quick_menu('This is the info I want to display to the user.\n'))
+      self.generalMenu.addItem('Sign Up', lambda: self.join_menu("Sign Up:", "Back"), lambda: True if not self.user.loggedOn else False) #Disapears when user logs in
+      self.generalMenu.addItem('Help Center', lambda: self.quick_menu(System.content["Help Center"]))
+      self.generalMenu.addItem('About', lambda: self.quick_menu(System.content["General About"]))
+      self.generalMenu.addItem('Press', lambda: self.quick_menu(System.content["Press"]))
+      self.generalMenu.addItem('Blog', lambda: self.quick_menu("Under Construction"))
+      self.generalMenu.addItem('Careers', lambda: self.quick_menu("Under Construction"))
+      self.generalMenu.addItem('Developers', lambda: self.quick_menu("Under Construction"))
+    
