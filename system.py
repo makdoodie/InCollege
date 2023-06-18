@@ -698,7 +698,7 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       self.importantLinks.addItem('Languages', self.language_menu, lambda: True if self.user.loggedOn else False)
       self.importantLinks.setExitStatement("Return To Home Page")
       # Set Guest Controls Items  
-      self.guestControls.setOpening("Account Preferences:\n")
+      self.guestControls.setOpening("Guest Controls:\n")
       self.guestControls.addItem((lambda: f"Email [{'ON' if self.user.email else 'OFF'}]"), self.setUserEmail)
       self.guestControls.addItem((lambda: f"SMS [{'ON' if self.user.sms else 'OFF'}]"), self.setUserSMS)
       self.guestControls.addItem(
@@ -714,9 +714,6 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
         label = lambda lang=language: f"{lang} [{'X' if self.user.language == lang else ' '}]"
         action = lambda lang=language: self.setUserLanguage(lang)
         self.languageMenu.addItem(label, action)
-      
-      for sel in self.languageMenu.selections:
-        print(sel['label']())
       self.languageMenu.setExitStatement("Back")
       # Privacy page
       privacyPolicy = """
