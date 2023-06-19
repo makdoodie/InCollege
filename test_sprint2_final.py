@@ -155,17 +155,16 @@ def test_student_success(system_instance, capsys):
   home_page = system_instance.homePage
 
   success_story = """
-      Welcome To The InCollege Home Page!
+    Welcome To The InCollege Home Page!
       
-      The Place Where Students Take The Next Big Step.
+    The Place Where Students Take The Next Big Step.
 
-      "I Had To Battle With Anxiety Every Day Until I Signed Up For InCollege.
-       Now, My Future Is On The Right Track And Im Able To Apply My Education To My 
-       Dream Career. Finding A Place In My Field Of Study Was A Breeze"
-        - InCollege User
+    "I Had To Battle With Anxiety Every Day Until I Signed Up For InCollege.
+    Now, My Future Is On The Right Track And Im Able To Apply My Education To My Dream Career.
+    Finding A Place In My Field Of Study Was A Breeze"
+    - InCollege User
 
     """
-
   assert home_page.opening == success_story
 
 
@@ -182,7 +181,7 @@ def test_name_register(system_instance, temp_remove_accounts, capsys):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert output[21] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
+  assert output[24] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
 
 def test_name_db(system_instance, temp_remove_accounts, name_register):#test that the users first and last name are stored in the db under fName and lName which are the second and third column
   fName = "unit"
@@ -204,7 +203,7 @@ def name_register(system_instance, temp_remove_accounts, capsys):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert output[21] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
+  assert output[24] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
   yield
 
 #@pytest.fixture#test that user can input first and last name when registering
@@ -214,12 +213,12 @@ def test_register(system_instance, capsys, temp_remove_accounts):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert output[16] == 'Enter Username: '
-  assert output[17] == 'Enter First Name: '
-  assert output[18] == 'Enter Last Name: '
-  assert output[19] == 'Enter Password: '
-  assert output[20] == 'Confirm Password: '
-  assert output[21] == 'Account created successfully.'
+  assert output[19] == 'Enter Username: '
+  assert output[20] == 'Enter First Name: '
+  assert output[21] == 'Enter Last Name: '
+  assert output[22] == 'Enter Password: '
+  assert output[23] == 'Confirm Password: '
+  assert output[24] == 'Account created successfully.'
 
 def test_login(system_instance, capsys, name_register):
   inputs = ['1', 'tester', 'Testing3!', '1', '0', '2', '0', '3', '0', '0', '0']
@@ -227,36 +226,42 @@ def test_login(system_instance, capsys, name_register):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert output[16] == 'Log In:'
-  assert output[18] == 'Enter Username: '
-  assert output[19] == 'Enter Password: '
-  assert output[20] == 'You Have Successfully Logged In!'
-  assert output[21] == 'Welcome User!'
-  assert output[22] == '[1] Job/Internship Search'
-  assert output[23] == '[2] Find A Friend'
-  assert output[24] == '[3] Learn A Skill'
-  assert output[25] == '[0] Log Out'
-  assert output[26] == 'Welcome to the Job Postings Page'
-  assert output[27] == '[1] Post Job'
-  assert output[28] == '[0] Return To Main Menu'
-  assert output[30] == 'Welcome User!'
-  assert output[31] == '[1] Job/Internship Search'
-  assert output[32] == '[2] Find A Friend'
-  assert output[33] == '[3] Learn A Skill'
-  assert output[34] == '[0] Log Out'
-  assert output[36] == '[0] Exit'
-  assert output[38] == 'Welcome User!'
+  assert output[19] == 'Log In:'
+  assert output[21] == 'Enter Username: '
+  assert output[22] == 'Enter Password: '
+  assert output[23] == 'You Have Successfully Logged In!'
+  assert output[24] == 'Welcome User!'
+  assert output[26] == '[1] Job/Internship Search'
+  assert output[27] == '[2] Find A Friend'
+  assert output[28] == '[3] Learn A Skill'
+  assert output[29] == '[4] Useful Links'
+  assert output[30] == '[5] InCollege Important Links'
+  assert output[31] == '[0] Log Out'
+  assert output[32] == 'Welcome to the Job Postings Page'
+  assert output[34] == '[1] Post Job'
+  assert output[35] == '[0] Return To Main Menu'
+  assert output[37] == 'Welcome User!'
   assert output[39] == '[1] Job/Internship Search'
   assert output[40] == '[2] Find A Friend'
   assert output[41] == '[3] Learn A Skill'
-  assert output[42] == '[0] Log Out'
-  assert output[43] == 'Please Select a Skill:'
-  assert output[44] == '[1] Project Management'
-  assert output[45] == '[2] Networking'
-  assert output[46] == '[3] System Design'
-  assert output[47] == '[4] Coding'
-  assert output[48] == '[5] Professional Communication'
-  assert output[49] == '[0] Return To Main Menu'
+  assert output[42] == '[4] Useful Links'
+  assert output[43] == '[5] InCollege Important Links'
+  assert output[44] == '[0] Log Out'
+  assert output[47] == '[0] Exit'
+  assert output[49] == 'Welcome User!'
+  assert output[51] == '[1] Job/Internship Search'
+  assert output[52] == '[2] Find A Friend'
+  assert output[53] == '[3] Learn A Skill'
+  assert output[54] == '[4] Useful Links'
+  assert output[55] == '[5] InCollege Important Links'
+  assert output[56] == '[0] Log Out'
+  assert output[57] == 'Please Select a Skill:'
+  assert output[59] == '[1] Project Management'
+  assert output[60] == '[2] Networking'
+  assert output[61] == '[3] System Design'
+  assert output[62] == '[4] Coding'
+  assert output[63] == '[5] Professional Communication'
+  assert output[64] == '[0] Return To Main Menu'
 
 def test_findpeople(system_instance, capsys, name_register):
   inputs = ['3', 'unit', 'tests', '0', '0']
@@ -264,13 +269,13 @@ def test_findpeople(system_instance, capsys, name_register):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert output[16] == 'Enter First Name: '
-  assert output[17] == 'Enter Last Name: '
-  assert output[18] == 'They Are Part Of The InCollege System.'
-  assert output[19] == 'Would You Like To Join Your Friends On InCollege?'
-  assert output[20] == '[1] Login'
-  assert output[21] == '[2] Register'
-  assert output[22] == '[0] Return To Home Page'
+  assert output[19] == 'Enter First Name: '
+  assert output[20] == 'Enter Last Name: '
+  assert output[21] == 'They Are Part Of The InCollege System.'
+  assert output[22] == 'Would You Like To Join Your Friends On InCollege?'
+  assert output[24] == '[1] Login'
+  assert output[25] == '[2] Register'
+  assert output[26] == '[0] Return To Home Page'
 
 def test_success_video(system_instance, capsys):
   inputs = ['4', '0', '0']
@@ -278,9 +283,9 @@ def test_success_video(system_instance, capsys):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert output[16] == 'See Our Success Story:'
-  assert output[17] == '(Playing Video)'
-  assert output[19] == '[0] Exit'
+  assert output[19] == 'See Our Success Story:'
+  assert output[20] == '(Playing Video)'
+  assert output[23] == '[0] Exit'
 
 # test this function: Create a jobs class with members: title, description, employer, location, salary, poster first name and last name.
 def test_job_creation_with_description():
