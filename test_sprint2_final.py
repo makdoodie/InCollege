@@ -468,24 +468,21 @@ def test_clear_console_before_menu_display():
 
 # #story: As a signed in user, I want to be able to post a job including details about the title, description, employer, location, and salary.
 # Add a "Post A Job" option to the "Job Search/Internship" menu.
-def test_addPostJobOption(system_instance):
-  # access main menu attribute
-  mainmenu =system_instance.mainMenu
-  #acces job menu attribute 
-  jobmenu =system_instance.jobsMenu
-  #check if the job/searchInsership is in the main menu
-  assert '1' in mainmenu.selections, "Selection '1' not found in jobs menu options"
-  assert mainmenu.selections['1'] == {
-    'label': 'Job/Internship Search',
-    'action': system_instance.jobs_menu
-  }
-  #check that the Post Job option is in the menu under job/search
-  assert jobmenu.opening == "Welcome to the Job Postings Page"
-  assert jobmenu.selections['1'] == {
-    'label': 'Post Job',
-    'action': system_instance.postJob
-  }
-  assert jobmenu.exitStatement == "Return To Main Menu"
+def test_addPostJobOption(system_instance, capsys):
+  system_instance.initMenu()
+
+  # simulate user picking the job psoting option
+  with mock.patch('builtins.input', side_effect=['1', '0', '0', '0']):
+    system_instance.main_menu()
+
+  # capture the output
+  captured = capsys.readouterr()
+
+  # assert expected output
+  assert "Job/Internship Search" in captured.out
+  assert system_instance.jobsMenu.opening == "Welcome to the Job Postings Page"
+  assert "[1] Post Job" in captured.out
+  assert system_instance.jobsMenu.exitStatement == "Return To Main Menu"
 
 
 # When the user selects "Post A Job" they should be prompted for a title, description, employer, location, and salary.
