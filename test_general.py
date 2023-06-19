@@ -33,7 +33,7 @@ def name_register(system_instance, temp_remove_accounts, capsys):
   assert output[24] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
   yield
 
-def test_loggedin(system_instance, temp_remove_accounts, capsys): #tests that signing up from the general option in useful links can only be accessed when a user is not logged in
+def test_notloggedin(system_instance, temp_remove_accounts, capsys): #tests that signing up from the general option in useful links can only be accessed when a user is not logged in
   input = ['5', '1', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
@@ -41,7 +41,7 @@ def test_loggedin(system_instance, temp_remove_accounts, capsys): #tests that si
   output = captured.out.split('\n')
   assert output[28] == '[1] Sign Up'
 
-def test_notloggedin(system_instance, name_register, capsys):  #tests that signing up is not an option from the general option in useful links to logged in users
+def test_loggedin(system_instance, name_register, capsys):  #tests that signing up is not an option from the general option in useful links to logged in users
   input = ['1', 'ahmad', 'Asibai1$', '4', '1', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
