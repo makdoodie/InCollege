@@ -29,6 +29,16 @@ def temp_remove_accounts(system_instance):
       saved_accounts)
   system_instance.conn.commit()
 
+@pytest.fixture #test that user can input first and last name when registering
+def name_register(system_instance, temp_remove_accounts, capsys):
+  system_instance.initMenu()
+  inputs = ['2', 'ahmad', 'ah', 'mad', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  assert output[24] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
+  yield
 
 # validate password
 def test_validate_valid_password(system_instance):
@@ -101,102 +111,53 @@ def test_invalid_credentials(system_instance, capsys):
 def test_menu(system_instance, capsys):
   # create an instance of system
   system_instance.initMenu()
-  homepage = system_instance.homePage
-
-  assert '1' in homepage.selections
-  assert homepage.selections['1'] == {
-    'label': 'Login',
-    'action': system_instance.login
-  }
-
-  assert '2' in homepage.selections
-  assert homepage.selections['2'] == {
-    'label': 'Register',
-    'action': system_instance.register
-  }
-
+  input = ['0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  assert '[1] Login' in output
+  assert '[2] Register' in output
 
 # all these functions are under contructions
 # search for a job or internship
-def test_job_search_under_construction(system_instance, capsys):
-    system=System()
-  # initialize menu options
-    system.initMenu()
-
-  # access main menu attribute
-    mainmenu =system.mainMenu
-  #acces job menu attribute 
-    
-  #check if the job/searchInsership is in the main menu
-    assert '1' in mainmenu.selections, "Selection '1' not found in jobs menu options"
-    assert mainmenu.selections['1'] == {
-    'label': 'Job/Internship Search',
-    'action': system.jobs_menu
-  }
+def test_job_search_under_construction(system_instance, name_register, capsys):
+  input = ['1', 'ahmad', 'Asibai1$', '1', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  assert 'Welcome to the Job Postings Page' in output
 
 #find someone the user knows friend
-def test_find_friend_under_construction(system_instance, capsys):
-    system=System()
-  # initialize menu options
-    system.initMenu()
+def test_find_friend_under_construction(system_instance, name_register, capsys):
+  input = ['1', 'ahmad', 'Asibai1$', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  assert '[2] Find A Friend' in output
 
-  # access main menu attribute
-    mainmenu =system.mainMenu 
-   
-  #check if the find friend is in the main menu
-    assert '2' in mainmenu.selections, "Selection '2' not found in friend menu options"
-    assert mainmenu.selections['2'] == {
-    'label': 'Find A Friend',
-    'action': system.friend_menu
-  }
-
-
-def test_skill_option(system_instance, capsys):
-  # create an instance of system
-  system_instance.initMenu()
-  main_menu = system_instance.mainMenu
-
-  assert '3' in main_menu.selections
-  assert main_menu.selections['3'] == {
-    'label': 'Learn A Skill',
-    'action': system_instance.skills_menu
-  }
+def test_skill_option(system_instance, name_register, capsys):
+  input = ['1', 'ahmad', 'Asibai1$', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  assert '[3] Learn A Skill' in output
 
 
-def test_numOfSkills(system_instance, capsys):
-  # create an instance of system
-  system_instance.initMenu()
-  skills_menu = system_instance.skillsMenu
-
-  options = ['1', '2', '3', '4', '5']
-  for item in options:
-    assert item in skills_menu.selections
-
-  assert skills_menu.selections['1'] == {
-    'label': 'Project Management',
-    'action': system_instance.skillA
-  }
-  assert skills_menu.selections['2'] == {
-    'label': 'Networking',
-    'action': system_instance.skillB
-  }
-  assert skills_menu.selections['3'] == {
-    'label': 'System Design',
-    'action': system_instance.skillC
-  }
-  assert skills_menu.selections['4'] == {
-    'label': 'Coding',
-    'action': system_instance.skillD
-  }
-  assert skills_menu.selections['5'] == {
-    'label': 'Professional Communication',
-    'action': system_instance.skillE
-  }
-
-
-""" The following functions test to make sure 
-that each of the skills in the menu print the 'Under Construction' message """
-
+def test_numOfSkills(system_instance, name_register, capsys):
+  input = ['1', 'ahmad', 'Asibai1$', '3', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  assert '[1] Project Management' in output
+  assert '[2] Networking' in output
+  assert '[3] System Design' in output
+  assert '[4] Coding' in output
+  assert '[5] Professional Communication' in output
 
 def test_skillA(system_instance, capsys):
   system_instance.skillA()
@@ -345,8 +306,13 @@ def test_validate_username_not_unique(system_instance, capfd):
   # username not unique (already taken)
   usr_taken_msg = "Username Has Been Taken."
   system_instance.cursor.execute('SELECT username FROM accounts LIMIT 1')
-  username = system_instance.cursor.fetchone()
+  rez = system_instance.cursor.fetchone()
+  if rez is not None:
+    username = rez[0]
+  else:
+    username = None
   test_user = True
+  system_instance.initMenu()
   if not username:  # no accounts, create a test user
     length = random.randint(5, 25)
     username = generate_random_string(length, 1, 0, 0)
@@ -355,7 +321,6 @@ def test_validate_username_not_unique(system_instance, capfd):
     fName = generate_random_string(8, 1, 0, 0)
     lName = generate_random_string(8, 1, 0, 0)
     with mock.patch('builtins.input', side_effect=['2', username, fName, lName, password, password, username, password, '0','0']):
-      system_instance.initMenu()
       system_instance.home_page()
   else:
     test_user = False
@@ -603,7 +568,7 @@ def test_login_menu_register(system_instance, temp_remove_accounts,capsys):
 # allowing users to return to the main/top level menu
 def test_return_option(system_instance, capfd):
   exit_opt = "[0] Log Out\n"
-  main_menu_opts = ['Job/Internship Search', 'Find A Friend', 'Learn A Skill']
+  main_menu_opts = ['Job/Internship Search', 'Find A Friend', 'Learn A Skill', 'Useful Links', 'InCollege Important Links']
   skills = ['Project Management', 'Networking', 'System Design', 'Coding', 'Professional Communication']
   # construct options for main and skill menus
   skill_choices = [
@@ -632,7 +597,3 @@ def test_return_option(system_instance, capfd):
   assert main_prompt in std.out.strip()
   assert skill_prompt in std.out.strip()
   assert "Exiting" in std.out.strip()
-  
-
-
-  
