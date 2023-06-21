@@ -184,6 +184,80 @@ class System:
     """
     self.cursor.execute(trigger_add_settings)
     self.conn.commit()
+
+    #create friends table
+    table_friends = """
+    CREATE TABLE IF NOT EXISTS friends (
+      user1 VARCHAR(25),
+      user2 VARCHAR(25),
+      status VARCHAR(12),
+      PRIMARY KEY(user1, user2),
+      FOREIGN KEY(user1) REFERENCES accounts(username),
+      FOREIGN KEY(user2) REFERENCES accounts(username));
+    """
+    self.cursor.execute(table_friends)
+    self.conn.commit()
+
+    #create trigger insert twin friendship record on friends table
+    #fields user1 & user2 are interchangable so each friend relation is represented by 2 records
+    trigger_twin_friends = """
+    CREATE TRIGGER IF NOT EXISTS insert_twin_friends
+    AFTER INSERT ON friends
+    FOR EACH ROW
+    BEGIN
+      --swap the posiitons of the 2 usernames and insert as new record if it doesn't exist yet
+      INSERT INTO friends (user1, user2, status)
+      SELECT NEW.user2, NEW.user1, NEW.status
+      WHERE NOT EXISTS(SELECT rowid FROM friends WHERE user1 = NEW.user2 AND user2 = NEW.user1);
+    END;
+    """
+    self.cursor.execute(trigger_twin_friends)
+    self.conn.commit()
+
+    #create trigger update twin friendship record on friends table
+    #fields user1 & user2 are interchangable so each friend relation is represented by 2 records
+    trigger_twin_friends = """
+    CREATE TRIGGER IF NOT EXISTS update_twin_friends
+    AFTER UPDATE ON friends
+    FOR EACH ROW
+    BEGIN
+      --swap the posiitons of the 2 usernames and update the twin record if its status is outdated
+      UPDATE friends
+      SET status = NEW.status
+      WHERE rowid IS (
+        SELECT rowid FROM friends WHERE user1 = NEW.user2 AND user2 = NEW.user1 AND status == OLD.status
+      );
+    END;
+    """
+    self.cursor.execute(trigger_twin_friends)
+    self.conn.commit()
+
+    #create trigger delete twin friendship record on friends table
+    #fields user1 & user2 are interchangable so each friend relation is represented by 2 records
+    trigger_twin_friends = """
+    CREATE TRIGGER IF NOT EXISTS delete_twin_friends
+    AFTER DELETE ON friends
+    FOR EACH ROW
+    BEGIN
+      --swap the posiitons of the 2 usernames and delete the twin record if it exists
+      DELETE FROM friends
+      WHERE EXISTS (SELECT rowid FROM friends WHERE user1 = OLD.user2 AND user2 = OLD.user1);
+    END;
+    """
+    self.cursor.execute(trigger_twin_friends)
+    self.conn.commit()
+
+    #create trigger remove friendships trigger on accounts table
+    trigger_rm_friends = """
+    CREATE TRIGGER IF NOT EXISTS rm_friendships
+    AFTER DELETE ON accounts
+    FOR EACH ROW
+    BEGIN
+      DELETE FROM friends WHERE user1 = OLD.username OR user2 = OLD.username;
+    END;
+    """
+    self.cursor.execute(trigger_rm_friends)
+    self.conn.commit()
     
     ## Instantiate User Class Here
     self.user = User("guest","","",False)
