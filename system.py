@@ -26,6 +26,7 @@ class Menu:
       self.exitStatement = "Exit"
       self.selections = []  # full list of selections(label, action, visibiliity) for the menu
       self.currSelections = [] # dyanmic list of menu selections that is updated every iteration of the menu
+      self.backgroundActions = [] # a list of functions that will be called each iteration before displaying the menu
 
   
     #destructor
@@ -46,6 +47,9 @@ class Menu:
     def addItem(self, item, func, vis = lambda: True):
         self.selections.append({'label': item, 'action': func, 'visible': vis})
 
+
+    def addBackgroundAction(self,func):
+      self.backgroundActions.append(func)
   
     def setOpening(self,opening):
       self.opening = opening
@@ -97,6 +101,9 @@ class Menu:
     #Main menu loop
       selection = None
       while True:
+        # run any tasks that need to be performed before displaying the menu
+        for action in self.backgroundActions:
+          action()
         self.currSelections = self.getValidSelections()
         if selection is None:  # skip displaying menu & prompting user if previous selection set new selection
           #Displays selections and stores what the user chooses
@@ -513,6 +520,7 @@ class System:
         self.user.language = language
     except Exception:
         print(MSG_ERR_RETRY)
+      
 
   ## Function for the important links to print
   content = {
