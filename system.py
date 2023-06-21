@@ -50,6 +50,13 @@ class Menu:
     def setOpening(self,opening):
       self.opening = opening
 
+    def getOpening(self):
+      """Returns the menu's opening statement as string."""
+      opening = self.opening
+      if callable(opening):
+        opening = opening()
+      return opening
+
   
     def setExitStatement(self,exit):
       self.exitStatement = exit
@@ -65,7 +72,7 @@ class Menu:
     ## Displays Each Set Menu Item; System Class performs the action
     ## Display List
     def displaySelections(self):
-        print(f"{self.opening}\n")
+        print(f"{self.getOpening()}\n")
         for idx, sel in enumerate(self.currSelections, start=1):
           label = sel['label']
           if callable(label):  # allow functions to be used as dynamic labels
