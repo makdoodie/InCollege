@@ -8,6 +8,7 @@ import os
 LANGUAGES = ('English', 'Spanish')
 MSG_ERR_RETRY = "Your Request Could Not Be Competed at This Time.\nPlease Try Again Later."
 
+
 class Jobs:
     def __init__(self, title, employer, location, salary, posterFirstName, posterLastName, description=None):
         self.title = title
@@ -353,9 +354,9 @@ class System:
 
   def login(self): #login check
       print("Log In:\n")
-      print("Enter Username: ")
+      print("Enter Username: ", end="")
       userName = input()
-      print("Enter Password: ")
+      print("Enter Password: ", end="")
       password = input()
       ##Validate User Name and Password then Search
       acc_fields = 'username, password, fName, lName, email, sms, targetedAds, language'
@@ -387,15 +388,19 @@ class System:
     if self.countRows("accounts") >= 5:
       print("Maximum Number Of Accounts Created!")
       return
-    print("Enter Username: ")
+    print("Enter Username: ", end="")
     username = input()
-    print("Enter First Name: ")
+    print("Enter First Name: ", end="")
     fName = input()
-    print("Enter Last Name: ")
+    print("Enter Last Name: ", end="")
     lName = input()
-    print("Enter Password: ")
+    # print("Enter University Name: ", end="")
+    # university = input()
+    # print("Enter Major: ", end="")
+    # major = input()
+    print("Enter Password: ", end="")
     password = input()
-    print("Confirm Password: ")
+    print("Confirm Password: ", end="")
     passwordCheck = input()
     ## Validate Inputs
     if self.validatePassword(password,passwordCheck) and self.validateUserName(username) and self.validName(fName,lName):
@@ -639,6 +644,8 @@ network with many users in many countries and territories worldwide
 In College Pressroom: Stay on top of the latest news, updates, and reports
 '''}
 
+
+
   ## Skills to Learn ##
   def skillA(self):
       print("Project Management")
@@ -681,11 +688,19 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       ## Set Main Menu Items
       self.mainMenu.setOpening("Welcome User!")
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
-      self.mainMenu.addItem('Find A Friend', self.friend_menu)
+      # Find a Friend in mainMenu now Friends
+      self.mainMenu.addItem('Friends', self.friend_menu)
       self.mainMenu.addItem('Learn A Skill', self.skills_menu)
       self.mainMenu.addItem('Useful Links', self.useful_links)
       self.mainMenu.addItem('InCollege Important Links', self.important_links)
       self.mainMenu.setExitStatement("Log Out")
+      # Set Friends Item
+      self.friendMenu.setOpening("Welcome To The Friends Page")
+      self.friendMenu.addItem("Find A Friend",lambda: self.quick_menu("Under Construction"))
+      self.friendMenu.addItem("Show My Network", lambda: self.quick_menu("Under Construction"))
+
+      # Set Find a Friend Items
+      self.friendMenu.setExitStatement("Return To Main Menu")
       # Set Skill Items
       self.skillsMenu.setOpening("Please Select a Skill:")
       self.skillsMenu.addItem('Project Management',self.skillA)
