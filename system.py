@@ -127,7 +127,18 @@ class System:
   def __init__(self): #create and connect to db
     self.conn = sqlite3.connect("accounts.db") #establishes connection to SQLite database called accounts
     self.cursor = self.conn.cursor() #creates cursor object which is later used to execute SQL queries
-    self.cursor.execute("CREATE TABLE IF NOT EXISTS accounts (username varchar2(25) PRIMARY KEY, password varchar2(12), fName varchar2(25), lName varchar2(25))") #execute method and cursor object are used to create table if one does not exist
+    self.cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS accounts (
+        username varchar2(25) PRIMARY KEY, 
+        password varchar2(12), 
+        fName varchar2(25), 
+        lName varchar2(25),
+        university TEXT,
+        major TEXT
+        )
+      """
+    ) #execute method and cursor object are used to create table if one does not exist
     self.conn.commit() #commit method used to save changes
     # SQL code to create the jobs table if one does not exist
     create_jobs_table = """
