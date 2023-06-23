@@ -413,7 +413,7 @@ class System:
       print("Enter Password: ", end="")
       password = input()
       ##Validate User Name and Password then Search
-      acc_fields = 'username, password, fName, lName, email, sms, targetedAds, language'
+      acc_fields = 'username, password, fName, lName, university, major, email, sms, targetedAds, language'
       select_account = f"""
         SELECT {acc_fields} FROM accounts NATURAL JOIN account_settings WHERE username = (?)
       """
@@ -427,10 +427,12 @@ class System:
           self.user.login(userName,
                           fName=account[2],
                           lName=account[3], 
-                          email=account[4], 
-                          sms=account[5], 
-                          targetedAds=account[6], 
-                          language=account[7])
+                          university=account[4],
+                          major=account[5],
+                          email=account[6], 
+                          sms=account[7], 
+                          targetedAds=account[8], 
+                          language=account[9])
           return self.home_page
         else:
           print("Invalid Username/Password, Try Again!")
@@ -438,8 +440,8 @@ class System:
         print("Account Not Found, Check Username/Password.")
 
   def register(self):
-    ## Set Account Limit
-    if self.countRows("accounts") >= 5:
+    ## Set Account Limit (now 10)
+    if self.countRows("accounts") >= 10:
       print("Maximum Number Of Accounts Created!")
       return
     print("Enter Username: ", end="")
@@ -448,10 +450,10 @@ class System:
     fName = input()
     print("Enter Last Name: ", end="")
     lName = input()
-    # print("Enter University Name: ", end="")
-    # university = input()
-    # print("Enter Major: ", end="")
-    # major = input()
+    print("Enter University Name: ", end="")
+    university = input()
+    print("Enter Major: ", end="")
+    major = input()
     print("Enter Password: ", end="")
     password = input()
     print("Confirm Password: ", end="")
@@ -459,7 +461,7 @@ class System:
     ## Validate Inputs
     if self.validatePassword(password,passwordCheck) and self.validateUserName(username) and self.validName(fName,lName):
       encrypted_pass = self.encryption(password)
-      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName) VALUES (?, ?, ?, ?)", (username, encrypted_pass,fName,lName))
+      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName,university,major) VALUES (?, ?, ?, ?, ?, ?)", (username, encrypted_pass,fName,lName,university,major))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
       return self.login
