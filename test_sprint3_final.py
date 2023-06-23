@@ -23,7 +23,7 @@ def temp_remove_accounts(system_instance):
   system_instance.cursor.execute("DELETE FROM accounts")
   if len(saved_accounts) > 0:
     system_instance.cursor.executemany(
-      "INSERT INTO accounts (username, password, fName, lName) VALUES (?, ?, ?, ?)",
+      "INSERT INTO accounts (username, password, fName, lName,university,major) VALUES (?, ?, ?, ?,?,?)",
       saved_accounts)
   system_instance.conn.commit()
 
@@ -41,7 +41,7 @@ def account_settings():
     # For example, insert test data into the database
     conn = sqlite3.connect("accounts.db")
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO accounts (username, password, fName, lName) VALUES (?, ?, ?, ?)", ('username', "Password123!", "Patrick","Shugerts"))
+    cursor.execute("INSERT INTO accounts (username, password, fName, lName,university,major) VALUES (?, ?, ?, ?,?,?)", ('username', "Password123!", "Patrick","Shugerts","USF","CS"))
     conn.commit()
     conn.close()
     system.user.login("username","Patrick","Shugerts",True,True,True,"English")
@@ -50,12 +50,13 @@ def account_settings():
 
 @pytest.fixture #test that user can input first and last name when registering
 def name_register(system_instance, temp_remove_accounts, capsys):
-  inputs = ['2', 'ahmad', 'ah', 'mad', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+  inputs = ['2', 'ahmad', 'ah', 'mad','usf','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
-  output = captured.out.split('\n')
-  assert output[24] == 'Account created successfully.'#22nd line of ouput from the program should be Account created successfully
+  output = captured.out
+  assert  'Account created successfully.' in output
+  
   yield
 
 def test_notloggedin(system_instance, temp_remove_accounts, capsys): #tests that signing up from the general option in useful links can only be accessed when a user is not logged in
@@ -63,31 +64,31 @@ def test_notloggedin(system_instance, temp_remove_accounts, capsys): #tests that
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
-  output = captured.out.split('\n')
-  assert output[28] == '[1] Sign Up'
+  output = captured.out
+  assert '[1] Sign Up' in output
 
 def test_loggedin(system_instance, name_register, capsys):  #tests that signing up is not an option from the general option in useful links to logged in users
   input = ['1', 'ahmad', 'Asibai1$', '4', '1', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
-  output = captured.out.split('\n')
-  assert output[41] == '[1] Help Center'
+  output = captured.out
+  assert  '[1] Help Center' in output
 
 def test_signup1(system_instance, temp_remove_accounts, capsys): #tests that registering from the signup general option is valid and saves the new users information in the db
-  input = ['5', '1', '1', '2', 'ahmad', 'ah', 'mad', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0', '0', '0', '0']
+  input = ['5', '1', '1', '2', 'ahmad', 'ah', 'mad', 'usf','cs','Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
-  output = captured.out.split('\n')
-  assert output[39] == '[2] Register'
-  assert output[41] == 'Enter Username: '
-  assert output[42] == 'Enter First Name: '
-  assert output[43] == 'Enter Last Name: '
-  assert output[44] == 'Enter Password: '
-  assert output[45] == 'Confirm Password: '
-  assert output[46] == 'Account created successfully.'
-  assert output[51] == 'You Have Successfully Logged In!'
+  output = captured.out
+  assert '[2] Register' in output
+  assert  'Enter Username: ' in output
+  assert 'Enter First Name: ' in output
+  assert 'Enter Last Name: ' in output
+  assert 'Enter Password: ' in output
+  assert 'Confirm Password: ' in output
+  assert 'Account created successfully.' in output
+  assert 'You Have Successfully Logged In!' in output
   username = "ahmad"
   cursor = system_instance.conn.cursor()
   cursor.execute('Select * From accounts where username = (?);', (username,))
@@ -100,11 +101,11 @@ def test_signup2(system_instance, name_register, capsys): #tests that a register
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
-  output = captured.out.split('\n')
-  assert output[38] == '[1] Login'
-  assert output[43] == 'Enter Username: '
-  assert output[44] == 'Enter Password: '
-  assert output[45] == 'You Have Successfully Logged In!'
+  output = captured.out
+  assert '[1] Login' in output
+  assert 'Enter Username: ' in output
+  assert 'Enter Password: ' in output
+  assert 'You Have Successfully Logged In!' in output
 
 def test_helpcenter(system_instance, temp_remove_accounts, capsys): #tests that the help center can be accessed from the general useful links option
   input = ['5', '1', '2', '0', '0', '0', '0']
@@ -167,18 +168,18 @@ def test_guestloggedin(system_instance, name_register, capsys):  #tests that gue
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
-  output = captured.out.split('\n')
-  assert output[61] == '[1] Guest Controls'
+  output = captured.out
+  assert '[1] Guest Controls' in output
 
 def test_controlsoff(system_instance, name_register, capsys):  #tests that guest controls are all off
   input = ['1', 'ahmad', 'Asibai1$', '5', '5', '1', '1', '2', '3', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
-  output = captured.out.split('\n')
-  assert output[73] == '[1] Email [OFF]'
-  assert output[81] == '[2] SMS [OFF]'
-  assert output[89] == '[3] Targeted Advertising [OFF]'
+  output = captured.out
+  assert '[1] Email [OFF]' in output
+  assert '[2] SMS [OFF]' in output
+  assert '[3] Targeted Advertising [OFF]' in output
   username = 'ahmad'
   cursor = system_instance.conn.cursor()
   cursor.execute('Select * From account_settings where username = (?);', (username,))
