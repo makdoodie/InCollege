@@ -18,12 +18,14 @@ class User:
     self.sentRequests = {}
     self.acceptedRequests = {}
     self.receivedRequests = {}
-    # logged on now false by default
+    # loggedOn now false by default
     self.loggedOn = loggedOn
-  def login(self, userName, fName, lName, email, sms, targetedAds, language):
+  def login(self, userName, fName, lName, university, major, email, sms, targetedAds, language):
     self.userName = userName
     self.fName = fName
     self.lName = lName
+    self.university = university
+    self.major = major
     self.email = email
     self.sms = sms
     self.targetedAds = targetedAds
@@ -33,6 +35,9 @@ class User:
     self.userName = "guest"
     self.fName = ""
     self.lName = ""
+    self.sentRequests = {}
+    self.acceptedRequests = {}
+    self.receivedRequests = {}
     self.loggedOn = False
   
     
