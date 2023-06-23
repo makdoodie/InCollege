@@ -579,7 +579,66 @@ class System:
         self.user.language = language
     except Exception:
         print(MSG_ERR_RETRY)
-      
+
+  def loadSentFriends(self):
+    """
+    Loads the current user's dictionary of friends that they have sent a pending friend request to.
+    """
+    query = """
+    SELECT username, fName, lName, university, major FROM accounts 
+    WHERE username IN (SELECT receiver FROM friends WHERE sender = ? AND status = ?)
+    """
+    params = (self.user.userName, 'pending')
+    self.cursor.execute(query, params)
+    result = self.cursor.fetchall()
+    # iterate over the results and create a dictionary mapping each username to an initialized user object
+    self.user.sentRequests = {
+      uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
+    }
+
+  def loadReceivedFriends(self):
+    """
+    Loads the current user's dictionary of friends that they have received a pending friend request from.
+    """
+    query = """
+    SELECT username, fName, lName, university, major FROM accounts 
+    WHERE username IN (SELECT sender FROM friends WHERE receiver = ? AND status = ?)
+    """
+    params = (self.user.userName, 'pending')
+    self.cursor.execute(query, params)
+    result = self.cursor.fetchall()
+    # iterate over the results and create a dictionary mapping each username to an initialized user object
+    self.user.receivedRequests = {
+      uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
+    }
+
+  def loadAcceptedFriends(self):
+    """
+    Loads the current user's dictionary of friends that have the accepted status.
+    """
+    query = """
+    SELECT username, fName, lName, university, major FROM accounts WHERE username IN (
+      SELECT CASE WHEN sender = ? THEN receiver ELSE sender END AS friend 
+      FROM friends WHERE ? in (sender, receiver) AND status = ?
+      GROUP BY friend
+    )
+    """
+    username = self.user.userName
+    params = (username, username, 'accepted')
+    self.cursor.execute(query, params)
+    result = self.cursor.fetchall()
+    # iterate over the results and create a dictionary mapping each username to an initialized user object
+    self.user.acceptedRequests = {
+      uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
+    }
+
+  def loadAllFriends(self):
+    """
+    Loads all 3 of the current user's friend dictionaries: sent, received, accepted.
+    """
+    self.loadSentFriends()
+    self.loadReceivedFriends()
+    self.loadAcceptedFriends()
 
   ## Function for the important links to print
   content = {
