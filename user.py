@@ -30,14 +30,14 @@ class User:
     self.sms = sms
     self.targetedAds = targetedAds
     self.language = language
-    self.sentRequests = {}
-    self.acceptedRequests = {}
-    self.receivedRequests = {}
     self.loggedOn = True
   def logout(self):
     self.userName = "guest"
     self.fName = ""
     self.lName = ""
+    self.sentRequests = {}
+    self.acceptedRequests = {}
+    self.receivedRequests = {}
     self.loggedOn = False
   
     
