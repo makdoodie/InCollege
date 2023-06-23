@@ -44,7 +44,7 @@ def account_settings():
     cursor.execute("INSERT INTO accounts (username, password, fName, lName,university,major) VALUES (?, ?, ?, ?,?,?)", ('username', "Password123!", "Patrick","Shugerts","USF","CS"))
     conn.commit()
     conn.close()
-    system.user.login("username","Patrick","Shugerts",True,True,True,"English")
+    system.user.login("username","Patrick","Shugerts","usf","cs",True,True,True,"English")
     # Return the system instance for the test
     return system
 
