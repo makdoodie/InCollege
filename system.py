@@ -55,6 +55,7 @@ class Menu:
     def setOpening(self,opening):
       self.opening = opening
 
+
     def getOpening(self):
       """Returns the menu's opening statement as string."""
       opening = self.opening
@@ -433,6 +434,8 @@ class System:
                           sms=account[7], 
                           targetedAds=account[8], 
                           language=account[9])
+          # load all friend dicts after successful login
+          self.loadAllFriends() 
           return self.home_page
         else:
           print("Invalid Username/Password, Try Again!")
@@ -613,6 +616,9 @@ class System:
     self.user.receivedRequests = {
       uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
     }
+    # return length of dictionary to determine if
+    # pending request message and number is displayed
+    return len(self.user.receivedRequests)
 
   def loadAcceptedFriends(self):
     """
@@ -641,6 +647,8 @@ class System:
     self.loadSentFriends()
     self.loadReceivedFriends()
     self.loadAcceptedFriends()
+
+
 
   ## Function for the important links to print
   content = {
@@ -760,7 +768,6 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
 '''}
 
 
-
   ## Skills to Learn ##
   def skillA(self):
       print("Project Management")
@@ -777,6 +784,8 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
   def skillE(self):
       print("Professional Communication")
       print("Under Construction")
+
+  
   def initMenu(self):
       ## Set Home Page Items
       hpOpening = """
@@ -801,10 +810,21 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
-      self.mainMenu.setOpening("Welcome User!")
+      if self.loadReceivedFriends():
+        # Check if there are pending requests, 
+        # display message if there are
+        self.mainMenu.setOpening("Welcome User! \n\nYou Have Pending Friend Requests!")
+      else:
+        self.mainMenu.setOpening("Welcome User!")
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       # Find a Friend in mainMenu now Friends
-      self.mainMenu.addItem('Friends', self.friend_menu)
+      if self.loadReceivedFriends():
+        numRequests = self.loadReceivedFriends()
+        # if there are pending requests, 
+        # display the amount next to the Friends option
+        self.mainMenu.addItem(f'Friends ({numRequests})', self.friend_menu)
+      else: 
+        self.mainMenu.addItem('Friends', self.friend_menu)
       self.mainMenu.addItem('Learn A Skill', self.skills_menu)
       self.mainMenu.addItem('Useful Links', self.useful_links)
       self.mainMenu.addItem('InCollege Important Links', self.important_links)
