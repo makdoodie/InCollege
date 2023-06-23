@@ -810,7 +810,8 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
-      if self.loadReceivedFriends():
+      numRequests = self.loadReceivedFriends()
+      if numRequests:
         # Check if there are pending requests, 
         # display message if there are
         self.mainMenu.setOpening("Welcome User! \n\nYou Have Pending Friend Requests!")
@@ -818,8 +819,7 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
         self.mainMenu.setOpening("Welcome User!")
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       # Find a Friend in mainMenu now Friends
-      if self.loadReceivedFriends():
-        numRequests = self.loadReceivedFriends()
+      if numRequests:
         # if there are pending requests, 
         # display the amount next to the Friends option
         self.mainMenu.addItem(f'Friends ({numRequests})', self.friend_menu)
