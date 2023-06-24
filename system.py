@@ -475,6 +475,7 @@ class System:
                           language=account[9])
           # load all friend dicts after successful login
           self.loadAllFriends() 
+          self.show_pending_message()
           return self.home_page
         else:
           print("Invalid Username/Password, Try Again!")
@@ -724,6 +725,17 @@ class System:
     self.cursor.execute(query, values)
     self.conn.commit()
 
+  # function to print pending message if there are
+  # friend requests for the current signed in user
+  def show_pending_message(self):
+    numRequests = self.loadReceivedFriends()
+    if numRequests:
+      self.mainMenu.setOpening(f"Welcome User!\n\nYou Have {numRequests} Pending Friend Requests!")
+    else:
+      self.mainMenu.setOpening("Welcome User!")    
+
+
+  
   ## Function for the important links to print
   content = {
 'Copyright Notice': '''
@@ -884,21 +896,9 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
-      numRequests = self.loadReceivedFriends()
-      if numRequests:
-        # Check if there are pending requests, 
-        # display message if there are
-        self.mainMenu.setOpening("Welcome User! \n\nYou Have Pending Friend Requests!")
-      else:
-        self.mainMenu.setOpening("Welcome User!")
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       # Find a Friend in mainMenu now Friends
-      if numRequests:
-        # if there are pending requests, 
-        # display the amount next to the Friends option
-        self.mainMenu.addItem(f'Friends ({numRequests})', self.friend_menu)
-      else: 
-        self.mainMenu.addItem('Friends', self.friend_menu)
+      self.mainMenu.addItem('Friends', self.friend_menu)
       self.mainMenu.addItem('Learn A Skill', self.skills_menu)
       self.mainMenu.addItem('Useful Links', self.useful_links)
       self.mainMenu.addItem('InCollege Important Links', self.important_links)
