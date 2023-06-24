@@ -704,7 +704,7 @@ class System:
     # generate the selections of the results menu from the user results
     self.userResultsMenu.clearSelections()
     for user in results:
-      self.userResultsMenu.addItem(user.userName, lambda usr=user: self.send_friend_request_menu(usr))
+      self.userResultsMenu.addItem(f"{user.fName} {user.lName}", lambda usr=user: self.send_friend_request_menu(usr))
 
     # set opening for user results menu
     self.userResultsMenu.setOpening(
