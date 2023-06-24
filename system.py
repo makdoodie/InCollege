@@ -359,6 +359,7 @@ class System:
       self.sendFriendRequestMenu.clearSelections()
 
   def show_pending_message(self):
+    # check receivedRequest dictionry to determine opening statement
     numRequests = len(self.user.receivedRequests)
     if numRequests:
       self.mainMenu.setOpening(f'Welcome User!\n\nYou Have {numRequests} Pending Friend Requests!')
@@ -371,12 +372,13 @@ class System:
     self.displayFriendInfo.start()
     
   def display_network(self, friend):
-    # quick menu for connections in show my network menu
+    # create a dynamic opening
     self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}\n\nName: {friend.fName} {friend.lName}\nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}""")
     # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", lambda: self.disconnectFriend(friend))
     self.displayFriendInfo.setExitStatement("Exit")
     self.displayFriendInfo.start()
+    # clean up menu
     self.displayFriendInfo.clearSelections()
 
   def show_network(self):
@@ -762,19 +764,18 @@ class System:
     self.cursor.execute(query, values)
     self.conn.commit()
 
-  # function to print pending message if there are
-  # friend requests for the current signed in user
-     
+  
   def disconnectFriend(self, friend):
     # delete from user and friend dictionaries
     del friend.acceptedRequests[self.userName]
     del self.user.acceptedRequests[friend.userName]
     # delete relationship from table
-    delete_query = """
+    query = """
     DELETE FROM friends
-    WHERE (sender = ? AND receiver = ?) AND status = 'accepted'"""
+    WHERE (sender = ? AND receiver = ?) AND status = 'accepted'
+    """
     params = (friend.userName, self.user.userName)
-    self.cursor.execute(delete_query, params)
+    self.cursor.execute(query, params)
     self.conn.commit()
     # clear selections in network menu and
     # call it again to show updated connections
