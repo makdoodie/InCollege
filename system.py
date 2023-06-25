@@ -411,7 +411,8 @@ class System:
 
       
   def show_pending_message(self):
-    # check receivedRequest dictionry to determine opening statement
+    # check receivedRequest dictionary to determine opening statement
+    self.loadAllFriends()
     numRequests = len(self.user.receivedRequests)
     if numRequests:
       self.mainMenu.setOpening(f'Welcome User!\n\nYou Have {numRequests} Pending Friend Requests!')
@@ -427,13 +428,15 @@ class System:
     # create a dynamic opening
     self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}\n\nName: {friend.fName} {friend.lName}\nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}""")
     # provide an option to disconnect from selected connection
-    self.displayFriendInfo.addItem("Disconnect", lambda: self.disconnectFriend(friend))
+    self.displayFriendInfo.addItem("Disconnect", lambda: self.disconnectFriend(friend), lambda: True if friend.userName in self.user.acceptedRequests else False)
     self.displayFriendInfo.setExitStatement("Exit")
     self.displayFriendInfo.start()
     # clean up menu
     self.displayFriendInfo.clearSelections()
 
   def show_network(self):
+    self.networkMenu.clearSelections()
+    self.loadAcceptedFriends()
     connections = self.user.acceptedRequests
     # check if user has connections
     if connections:
@@ -562,11 +565,7 @@ class System:
                           email=account[6], 
                           sms=account[7], 
                           targetedAds=account[8], 
-                          language=account[9])
-          # load all friend dicts after successful login
-          self.loadAllFriends() 
-          self.show_pending_message()
-          self.show_network()
+                          language=account[9])          
           return self.home_page
         else:
           print("Invalid Username/Password, Try Again!")
@@ -865,22 +864,15 @@ class System:
 
   
   def disconnectFriend(self, friend):
-    # delete from user and friend dictionaries
-    del friend.acceptedRequests[self.userName]
-    del self.user.acceptedRequests[friend.userName]
     # delete relationship from table
     query = """
     DELETE FROM friends
-    WHERE (sender = ? AND receiver = ?) AND status = 'accepted'
+    WHERE ? IN (sender, receiver) AND ? IN (sender, receiver) AND status = 'accepted' 
     """
     params = (friend.userName, self.user.userName)
     self.cursor.execute(query, params)
     self.conn.commit()
-    # clear selections in network menu and
-    # call it again to show updated connections
-    self.networkMenu.clearSelections()
-    self.show_network()
-
+    
   
   ## Function for the important links to print
   content = {
@@ -1042,6 +1034,7 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       ## Set Video Page Items
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
+      self.mainMenu.addBackgroundAction(self.show_pending_message)
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       # Find a Friend in mainMenu now Friends
       self.mainMenu.addItem('Friends', self.friend_menu)
@@ -1059,6 +1052,8 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       )
       self.friendMenu.addBackgroundAction(self.loadAllFriends)
       self.friendMenu.setExitStatement("Return To Main Menu")
+      self.networkMenu.addBackgroundAction(self.show_network)
+      self.displayFriendInfo.addBackgroundAction(self.loadAcceptedFriends)
       # Set Skill Items
       self.skillsMenu.setOpening("Please Select a Skill:")
       self.skillsMenu.addItem('Project Management',self.skillA)
