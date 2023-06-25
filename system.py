@@ -379,6 +379,7 @@ class System:
       self.sendFriendRequestMenu.clearBackgroundActions()
       self.sendFriendRequestMenu.clearSelections()
 
+
   def receive_friend_req_menu(self, friend):
       """Performs setup and cleanup for the receive friend request menu."""
       # create the dynamic opening statement
@@ -408,10 +409,42 @@ class System:
       self.receiveFriendReqMenu.clearBackgroundActions()
       self.receiveFriendReqMenu.clearSelections()
 
+      
+  def show_pending_message(self):
+    # check receivedRequest dictionry to determine opening statement
+    numRequests = len(self.user.receivedRequests)
+    if numRequests:
+      self.mainMenu.setOpening(f'Welcome User!\n\nYou Have {numRequests} Pending Friend Requests!')
+    else:
+      self.mainMenu.setOpening('Welcome User!') 
+
   def network_menu(self):
     self.networkMenu.start()
   def display_friend_info(self):
     self.displayFriendInfo.start()
+    
+  def display_network(self, friend):
+    # create a dynamic opening
+    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}\n\nName: {friend.fName} {friend.lName}\nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}""")
+    # provide an option to disconnect from selected connection
+    self.displayFriendInfo.addItem("Disconnect", lambda: self.disconnectFriend(friend))
+    self.displayFriendInfo.setExitStatement("Exit")
+    self.displayFriendInfo.start()
+    # clean up menu
+    self.displayFriendInfo.clearSelections()
+
+  def show_network(self):
+    connections = self.user.acceptedRequests
+    # check if user has connections
+    if connections:
+      self.networkMenu.setOpening("Your Connections: ")    
+      for uname, user in reversed(connections.items()):
+        full_name = f'{user.fName} {user.lName}'
+        # create an option for each connection and
+        # provide additional info when clicked on
+        self.networkMenu.addItem(full_name, lambda usr=user: self.display_network(usr))
+    else:
+      self.networkMenu.setOpening("You Have No Connections.")
     
   def encryption(self, password):
     sha256 = hashlib.sha256()
@@ -533,7 +566,7 @@ class System:
           # load all friend dicts after successful login
           self.loadAllFriends() 
           self.show_pending_message()
-          self.showNetwork()
+          self.show_network()
           return self.home_page
         else:
           print("Invalid Username/Password, Try Again!")
@@ -716,7 +749,7 @@ class System:
     }
     # return length of dictionary to determine if
     # pending request message and number is displayed
-    return len(self.user.receivedRequests)
+    return self.user.receivedRequests
 
   def loadAcceptedFriends(self):
     """
@@ -737,7 +770,6 @@ class System:
     self.user.acceptedRequests = {
       uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
     }
-    return self.user.acceptedRequests
 
   def loadAllFriends(self):
     """
@@ -787,6 +819,7 @@ class System:
     if result is None:
       print("Error: Pre-Existing Friend Record Found. Please See Updated Relation Status Below.\n")
 
+
   def acceptFriendRequest(self, friend):
     """
 	  Updates the relation in the friends table between the user and the friend to accepted.
@@ -829,38 +862,25 @@ class System:
         f"{friend.fName} {friend.lName}", 
         lambda usr=friend: self.receive_friend_req_menu(usr)
       )
-  # function to print pending message if there are
-  # friend requests for the current signed in user
-  def show_pending_message(self):
-    numRequests = self.loadReceivedFriends()
-    if numRequests:
-      self.mainMenu.setOpening(f'Welcome User!\n\nYou Have {numRequests} Pending Friend Requests!')
-    else:
-      self.mainMenu.setOpening('Welcome User!')    
-
-
-  def displayNetwork(self, opening, exit='Back'):
-    # quick menu for connections in show my network menu
-    self.displayFriendInfo.setOpening(opening)
-    self.displayFriendInfo.setExitStatement(exit)
-    self.displayFriendInfo.start()
-  
-  def showNetwork(self):
-    connections = self.loadAcceptedFriends()
-    # check if user has connections
-    if connections:
-      self.networkMenu.setOpening("Your Connections: ")    
-      for uname, user in reversed(connections.items()):
-        full_name = f'{user.fName} {user.lName}'
-        # create an option for each connection and
-        # provide additional info when clicked on
-        self.networkMenu.addItem(full_name, lambda usr=user: self.displayNetwork(f'Additional Friend Information: \n\nName: {usr.fName} {usr.lName}\nUsername: {usr.userName}\nUniversity: {usr.university}\nMajor: {usr.major}'))
-      # provide an option to disconnect from selected connection
-      self.displayFriendInfo.addItem("Disconnect", lambda usr=user: self.quick_menu("Under Construction"))
-    else:
-      self.networkMenu.setOpening("You Have No Connections.")
 
   
+  def disconnectFriend(self, friend):
+    # delete from user and friend dictionaries
+    del friend.acceptedRequests[self.userName]
+    del self.user.acceptedRequests[friend.userName]
+    # delete relationship from table
+    query = """
+    DELETE FROM friends
+    WHERE (sender = ? AND receiver = ?) AND status = 'accepted'
+    """
+    params = (friend.userName, self.user.userName)
+    self.cursor.execute(query, params)
+    self.conn.commit()
+    # clear selections in network menu and
+    # call it again to show updated connections
+    self.networkMenu.clearSelections()
+    self.show_network()
+
   
   ## Function for the important links to print
   content = {
