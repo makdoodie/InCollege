@@ -813,8 +813,8 @@ class System:
     """
     query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
     values = (self.user.userName, friend.userName, 'pending')
-    result = self.cursor.fetchone()
     self.cursor.execute(query, values)
+    result = self.cursor.fetchone()
     self.conn.commit()
     if result is None:
       print("Error: Pre-Existing Friend Record Found. Please See Updated Relation Status Below.\n")
