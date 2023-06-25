@@ -779,10 +779,13 @@ class System:
     Args:
       friend (User): The user that will be the receiver of the friend request.
     """
-    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?)"
+    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
     values = (self.user.userName, friend.userName, 'pending')
+    result = self.cursor.fetchone()
     self.cursor.execute(query, values)
     self.conn.commit()
+    if result is None:
+      print("Error: Pre-Existing Friend Record Found. Please See Updated Relation Status Below.\n")
 
   def acceptFriendRequest(self, friend):
     """
