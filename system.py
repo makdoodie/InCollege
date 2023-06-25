@@ -358,10 +358,10 @@ class System:
       # create the dynamic opening statement
       opening = (
         lambda: f"""Name: {friend.fName} {friend.lName}\n\nUniversity: {friend.university}\n\nMajor: {friend.major}\n
-      {"You have sent a friend request to this user." if friend.userName in self.user.sentRequests 
-        else "You have received a friend request from this user." if friend.userName in self.user.receivedRequests 
-        else "You are friends with this user." if friend.userName in self.user.acceptedRequests 
-        else "You not friends with this user."}"""
+      {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
+        else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
+        else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
+        else "You Are Not Friends With This User."}"""
       )
       # initialize the menu components
       self.sendFriendRequestMenu.setOpening(opening)
@@ -385,10 +385,10 @@ class System:
       # create the dynamic opening statement
       opening = (
         lambda: f"""Name: {friend.fName} {friend.lName}\n\nUniversity: {friend.university}\n\nMajor: {friend.major}\n
-      {"You have sent a friend request to this user." if friend.userName in self.user.sentRequests 
-        else "You have received a friend request from this user." if friend.userName in self.user.receivedRequests 
-        else "You are friends with this user." if friend.userName in self.user.acceptedRequests 
-        else "You not friends with this user."}"""
+      {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
+        else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
+        else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
+        else "You Are Not Friends With This User."}"""
       )
       # initialize the menu components
       self.receiveFriendReqMenu.setOpening(opening)
