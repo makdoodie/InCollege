@@ -3,6 +3,7 @@ import string
 import random
 from unittest import mock
 from system import System
+import sqlite3
 
 @pytest.fixture #creates instance of System and calls Main Menu
 def system_instance():
@@ -24,6 +25,42 @@ def temp_remove_accounts(system_instance):
       "INSERT INTO accounts (username, password, fName, lName, university, major) VALUES (?, ?, ?, ?, ?, ?)",
       saved_accounts)
   system_instance.conn.commit()
+
+@pytest.fixture #Creates an account to test with in the database
+def name_register(system_instance, temp_remove_accounts, capsys):
+  inputs = ['2', 'ahmad', 'ah', 'mad','usf','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert  'Account created successfully.' in output
+  
+  yield
+
+@pytest.fixture #Creates a second account to test with in the database
+def name_register_1(system_instance, temp_remove_accounts, capsys):
+  inputs = ['2', 'makdoodie', 'mahmood', 'sales','usf','cs', 'Test123!', 'Test123!', 'makdoodie', 'Test123!', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert  'Account created successfully.' in output
+  
+  yield
+
+@pytest.fixture #Creates an account to test with in the database (modular)
+def three_users(system_instance, temp_remove_accounts, capsys):
+  inputs1 = ['2', 'ahmad', 'ah', 'mad','usf','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+  inputs2 = ['2', 'makdoodie', 'mahmood', 'sales','usf','cs', 'Test123!', 'Test123!', 'makdoodie', 'Test123!', '0', '0']
+  inputs3 = ['2', 'testuser', 'mark', 'smith','usf','cs', 'Test123!', 'Test123!', 'testuser', 'Test123!', '0', '0']
+  allInputs = [inputs1, inputs2, inputs3]
+  for inputs in allInputs:
+    with mock.patch('builtins.input', side_effect=inputs):
+      system_instance.home_page()
+    captured = capsys.readouterr()
+    output = captured.out
+    assert  'Account created successfully.' in output  
+  yield
 
 # generates a random string based on the provided parameters
 def generate_random_string(length, num_upper, num_digits, num_special):
@@ -1116,11 +1153,217 @@ def test_reject_requests(test_instance_1):
   assert not "username" in test_instance_1.user.sentRequests
   assert not "username" in test_instance_1.user.receivedRequests
   
- 
+#Story 2 As a developer I want to modify the database to support expanded user accounts and friend’s lists
+
+#Subask 1: Modify the accounts table to include university and major fields(text)
+def test_accounts_table_creation_withFields(system_instance, name_register):
+    # Get the column names of the accounts table
+    system_instance.cursor.execute("PRAGMA table_info(accounts)")
+    columns = system_instance.cursor.fetchall()
+    column_names = [column[1] for column in columns]
+    # Define the expected column names
+    expected_columns = [
+        'username', 
+        'password', 
+        'fName', 
+        'lName',
+        'university',
+        'major'
+    ]
+    # Assert that the column names match the expected column names
+    assert column_names == expected_columns
+
+#Subtask 2: Add a deletion trigger on the account table to remove associated records from an accounts table when an account is deleted
+
+def test_deletion_trigger(system_instance, three_users):
+    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
+    values = ('makdoodie', 'ahmad', 'pending')
+    system_instance.cursor.execute(query, values)
+    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
+    values = ('ahmad', 'testuser', 'pending')
+    system_instance.cursor.execute(query, values)
+    system_instance.cursor.execute("SELECT count(*) FROM friends")
+    friends_count = system_instance.cursor.fetchone()
+    assert friends_count[0] == 2
+    system_instance.cursor.execute("DELETE FROM accounts WHERE username = 'makdoodie'")
+    system_instance.cursor.execute("SELECT * FROM friends")
+    friends_table = system_instance.cursor.fetchall()
+    assert len(friends_table) == 1
+    assert friends_table[0] == values
+
+
+#Subtask 3: Create friend’s table with 3 fields: sender (fk accounts), receiver (fk accounts) and status (pending, accepted) Primary Key (sender, receiver)
+
+#Ensure that the 'friends' table is created with the correct attributes and schema
+def test_friends_table_creation_withFields(system_instance): 
+    # Get the column names of the friends table
+    system_instance.cursor.execute("PRAGMA table_info(friends)")
+    columns = system_instance.cursor.fetchall()
+    column_names = [column[1] for column in columns]
+    # Define the expected column names
+    expected_columns = [
+        'sender',
+        'receiver',
+        'status'
+    ]
+    # Assert that the column names match the expected column names
+    assert column_names == expected_columns
+
+#Subtask 4: Add insert trigger on friend table to enforce unique combinations of sender and receiver.
+def test_unique_requests(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
+    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
+    values = ('makdoodie', 'mad', 'pending')
+    system_instance.cursor.execute(query, values)
+    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
+    values = ('mad', 'makdoodie', 'pending')
+    try:
+      system_instance.cursor.execute(query, values)
+      assert False
+    except sqlite3.IntegrityError:
+      assert True
+    system_instance.cursor.execute("SELECT COUNT(*) FROM friends")
+    row_count = system_instance.cursor.fetchone()[0]
+    assert row_count == 1
+
+#Story 3 As a user, I want to have access to a friend feature in the main menu
+
+#Subtask 1: To notify the user of pending/received friend requests
+#Tests the notification system on the main menu once a user signs in
+def test_signup1(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1): 
+  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  input = ['1', 'ahmad', 'Asibai1$', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert 'You Have 1 Pending Friend Requests!' in output
   
+#Subtask 2: Add a friend’s option to the main menu
+#Test the friend's option shows up
+def test_freind_option(system_instance, capsys, name_register):
+  inputs = ['1', 'ahmad', 'Asibai1$', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert '[2] Friends' in output
+
+#Subtask 3: Move the find a friend option from the main menu to the friends menu
+#Test the friend's option shows up
+def test_find_friends_moved(system_instance, capsys, name_register):
+  inputs = ['1', 'ahmad', 'Asibai1$', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert "Find A Friend" not in output
+
+#Test the friend's option shows up
+def test_find_friends(system_instance, capsys, name_register):
+  inputs = ['1', 'ahmad', 'Asibai1$', '2', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert "Find A Friend" in output
+
+#Story 7 As a user I want to be able to manage a friend request send to me by  other users
+
+#Subask 1: Add a 'pending requests' option to the friends menu that displays the first & last names from the user's received friend list
+def test_pending(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1): 
+  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '0', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert '[3] Pending Requests (1)' in output
+  assert '[1] mahmood sales' in output
   
+#Subask 2: Clicking on a request should allow the user to view the other users information and accept or reject the request.
+def test_accept_choice(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1): 
+  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '0', '0', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split('\n')
+  #nakes sure the name, university, and major are displayed
+  for line in output[156:161]:
+    if "Name" in line:
+        found_name = True
+    if "University" in line:
+        found_uni = True
+    if "Major" in line:
+        found_major = True
+  assert found_name and found_uni and found_major
+  #make sure accept and reject options are present
+  assert output[164] == '[1] Accept'
+  assert output[165] == '[2] Reject'
+
+#Subtask 3: If the user accepts the request, the user object and the friends table should be updated to reflect the accepted friend status.
+def test_accepted(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
+  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '1', '0', '0', '0', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  sender = "makdoodie"
+  receiver = "ahmad" 
+  cursor = system_instance.conn.cursor()
+  cursor.execute('SELECT * FROM friends WHERE sender = ? AND receiver = ?;', (sender, receiver))
+  result = cursor.fetchone()
+  assert type(result) == tuple
+  assert result[2] == 'accepted'
+  with mock.patch('builtins.input', side_effect=['ahmad', 'Asibai1$', '0']):
+    system_instance.login()
+    system_instance.friend_menu()
+  assert len(system_instance.user.receivedRequests) == 0
+  assert len(system_instance.user.acceptedRequests) == 1
+
+#Subtask 4: If the user rejects the request, the friend record should be removed from the user class and friends table in the database.
+def test_rejected(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
+  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '2', '0', '0', '0', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  sender = "makdoodie"
+  receiver = "ahmad" 
+  cursor = system_instance.conn.cursor()
+  cursor.execute('SELECT * FROM friends WHERE sender = ? AND receiver = ?;', (sender, receiver))
+  assert cursor.fetchone() is None
+  with mock.patch('builtins.input', side_effect=['ahmad', 'Asibai1$', '0']):
+    system_instance.login()
+    system_instance.friend_menu()
+  assert len(system_instance.user.receivedRequests) == 0
+  assert len(system_instance.user.acceptedRequests) == 0
 
 
-
-
- 
+#Subtask 5: After an accept/reject, the friend should not appear in 'pending requests'.
+def test_pending_gone(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
+  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '1', '0', '0', '0', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=input):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out.split("\n")
+  #Makes sure the pending requests menu now says 0 
+  assert output[177] == 'You Have Received Friend Requests From 0 Users.'
+  #Makes sure the user's name is not still in the pending request menu
+  request_pending = False
+  for line in output[177:181]:
+    if "[1] mahmood sales" in line:
+        request_pending = True
+  # Assert that request_pending is False, indicating no pending request
+  assert not request_pending
