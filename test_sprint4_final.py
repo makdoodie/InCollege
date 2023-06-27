@@ -1212,10 +1212,10 @@ def test_friends_table_creation_withFields(system_instance):
 #Subtask 4: Add insert trigger on friend table to enforce unique combinations of sender and receiver.
 def test_unique_requests(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
     query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
-    values = ('makdoodie', 'mad', 'pending')
+    values = ('makdoodie', 'ahmad', 'pending')
     system_instance.cursor.execute(query, values)
     query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
-    values = ('mad', 'makdoodie', 'pending')
+    values = ('ahmad', 'makdoodie', 'pending')
     try:
       system_instance.cursor.execute(query, values)
       assert False
