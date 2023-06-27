@@ -1054,13 +1054,20 @@ def test_register_success(system_instance, capfd, temp_remove_accounts):
   account = system_instance.cursor.fetchone()
   assert msg_max_accounts in std.out.strip() and account is None
 
-def test_findfriend(system_instance, capsys, name_register): #tests that show my network is an option, then checks that the first and last name is displayed in show my network for all friends of the user, then connects with a friend and checks that once disconnected with that same friend, the former friend does not appear in show my network
-  inputs = ['2', 'james', 'sm', 'ith', 'usf', 'cs', 'Jsmith1!', 'Jsmith1!', 'james', 'Jsmith1!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '1', 'ahmad', 'Asibai1$', '2', '3', '1', '1', '0', '0', '2', '1', '1', '0', '0', '0', '0', '0']
+def test_findfriend(system_instance, capsys, name_register): #tests that show my network is an option
+  inputs = ['2', 'james', 'sm', 'ith', 'usf', 'cs', 'Jsmith1!', 'Jsmith1!', 'james', 'Jsmith1!', '2', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out
   assert '[2] Show My Network' in output
+
+def test_network(system_instance, capsys, name_register): #tests that the first and last name is displayed in show my network for all friends of the user, then connects with a friend and checks that once disconnected with that same friend, the former friend does not appear in show my network
+  inputs = ['2', 'james', 'sm', 'ith', 'usf', 'cs', 'Jsmith1!', 'Jsmith1!', 'james', 'Jsmith1!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '1', 'ahmad', 'Asibai1$', '2', '3', '1', '1', '0', '0', '2', '1', '1', '0', '0', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
   assert '[1] sm ith' in output
   assert 'Name: sm ith\nUsername: james\nUniversity: usf\nMajor: cs\n\n[1] Disconnect' in output
   assert 'You Have Disconnected From This User' in output
