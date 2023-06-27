@@ -840,7 +840,6 @@ def test_menu_class_additions(test_instance_1):
   assert hasattr(test_instance_1.sendFriendRequestMenu,"backgroundActions")
   assert hasattr(test_instance_1.homePage,"backgroundActions")
   assert hasattr(test_instance_1.mainMenu,"backgroundActions")
-  
 def test_friend_search_University(test_instance_1):
   field = "university"
   value = "USF"
@@ -976,7 +975,25 @@ def test_accepted_requests(test_instance_1):
   test_instance_1.loadAllFriends()
   assert "username" in test_instance_1.user.acceptedRequests
   
-  
+def test_reject_requests(test_instance_1):
+  field = "university"
+  value = "USF"
+  query = f"""
+  SELECT username, fName, lName, university, major FROM accounts WHERE {field} LIKE ? COLLATE NOCASE and username != ?"""
+  test_instance_1.cursor.execute(query, (f"%{value}%", test_instance_1.user.userName))
+  results = [
+    User(uname, fname, lname, university=uni, major=maj) for uname, fname, lname, uni, maj in test_instance_1.cursor.fetchall()
+  ]
+  for friend in results:
+    test_instance_1.sendFriendRequest(friend)
+  test_instance_1.user.login("username1","Test","Test","usf","cs",True,True,True,"English")
+  test_instance_1.loadAllFriends()
+  for uname, friend in test_instance_1.user.receivedRequests.items():
+     test_instance_1.rejectFriendRequest(friend)
+  test_instance_1.loadAllFriends()
+  assert not "username" in test_instance_1.user.acceptedRequests 
+  assert not "username" in test_instance_1.user.sentRequests
+  assert not "username" in test_instance_1.user.receivedRequests
   
  
   
