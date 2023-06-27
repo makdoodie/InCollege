@@ -253,6 +253,10 @@ class System:
     """
     self.cursor.execute(trigger_rm_friends)
     self.conn.commit()
+
+    # turn on foreign key constraint enforcement (off by default in SQLite)
+    self.cursor.execute("PRAGMA foreign_keys = ON")
+    self.conn.commit()
     
     ## Instantiate User Class Here
     self.user = User("guest","","",False)
@@ -810,13 +814,23 @@ class System:
     Args:
       friend (User): The user that will be the receiver of the friend request.
     """
-    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
+    query = "INSERT INTO friends (sender, receiver, status) VALUES (?,?,?)"
     values = (self.user.userName, friend.userName, 'pending')
-    self.cursor.execute(query, values)
-    result = self.cursor.fetchone()
-    self.conn.commit()
-    if result is None:
-      print("Error: Pre-Existing Friend Record Found. Please See Updated Relation Status Below.\n")
+    try:
+      self.cursor.execute(query, values)
+      self.conn.commit()
+    except sqlite3.IntegrityError as e:
+      e = str(e)
+      #one or both users don't exist (maybe accounts deleted)
+      if e == "FOREIGN KEY constraint failed":
+        print("Error: User not found. Please retry the search later.\n")
+      # user already received a request from the friend
+      elif e == "UNIQUE constraint failed: friends.sender, friends.receiver":  
+        print("Error: Pre-Existing Friend Record Found. Please See Updated Relation Status Below.\n")
+      # catch all (can't connect to database?)
+      else:
+        print(e)
+      self.conn.rollback() # need to rollback the failed transaction or database will remain locked
 
 
   def acceptFriendRequest(self, friend):
