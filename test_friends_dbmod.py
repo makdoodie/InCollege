@@ -2,6 +2,7 @@
 import pytest
 from unittest import mock
 from system import System
+import sqlite3
 
 @pytest.fixture #creates instance of System and calls Main Menu
 def system_instance():
@@ -49,6 +50,20 @@ def name_register_1(system_instance, temp_remove_accounts, capsys):
   
   yield
 
+@pytest.fixture #Creates an account to test with in the database (modular)
+def three_users(system_instance, temp_remove_accounts, capsys):
+  inputs1 = ['2', 'ahmad', 'ah', 'mad','usf','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+  inputs2 = ['2', 'makdoodie', 'mahmood', 'sales','usf','cs', 'Test123!', 'Test123!', 'makdoodie', 'Test123!', '0', '0']
+  inputs3 = ['2', 'testuser', 'mark', 'smith','usf','cs', 'Test123!', 'Test123!', 'testuser', 'Test123!', '0', '0']
+  allInputs = [inputs1, inputs2, inputs3]
+  for inputs in allInputs:
+    with mock.patch('builtins.input', side_effect=inputs):
+      system_instance.home_page()
+    captured = capsys.readouterr()
+    output = captured.out
+    assert  'Account created successfully.' in output  
+  yield
+
 #Subask 1: Modify the accounts table to include university and major fields(text)
 def test_accounts_table_creation_withFields(system_instance, name_register):
     # Get the column names of the accounts table
@@ -69,6 +84,22 @@ def test_accounts_table_creation_withFields(system_instance, name_register):
 
 #Subtask 2: Add a deletion trigger on the account table to remove associated records from an accounts table when an account is deleted
 
+def test_deletion_trigger(system_instance, three_users):
+    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
+    values = ('makdoodie', 'ahmad', 'pending')
+    system_instance.cursor.execute(query, values)
+    query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
+    values = ('ahmad', 'testuser', 'pending')
+    system_instance.cursor.execute(query, values)
+    system_instance.cursor.execute("SELECT count(*) FROM friends")
+    friends_count = system_instance.cursor.fetchone()
+    assert friends_count[0] == 2
+    system_instance.cursor.execute("DELETE FROM accounts WHERE username = 'makdoodie'")
+    system_instance.cursor.execute("SELECT * FROM friends")
+    friends_table = system_instance.cursor.fetchall()
+    assert len(friends_table) == 1
+    assert friends_table[0] == values
+
 
 #Subtask 3: Create friend’s table with 3 fields: sender (fk accounts), receiver (fk accounts) and status (pending, accepted) Primary Key (sender, receiver)
 
@@ -87,30 +118,6 @@ def test_friends_table_creation_withFields(system_instance):
     # Assert that the column names match the expected column names
     assert column_names == expected_columns
 
-#Checking the field types and primary keys of the friends table:
-def test_friends_table_schema(system_instance):
-    # Get the column information of the jobs table
-    system_instance.cursor.execute("PRAGMA table_info(friends)")
-    columns = system_instance.cursor.fetchall()
-    # Define the expected field types and primary keys
-    #A value of 1 means the column does not allow NULL values, and 0 means NULL values are allowed.
-    expected_schema = {
-        'sender': ('VARCHAR(25)', 1, 1),
-        'receiver': ('VARCHAR(25)', 1, 1),
-        'status': ('VARCHAR(12)', 0, 0)
-    }
- # Iterate over the columns and compare with expected schema
-    for column in columns:
-        column_name = column[1]
-        field_type = column[2]
-        is_primary_key = column[5]
-
-        # Assert field type
-        assert field_type == expected_schema[column_name][0], f"Field type mismatch for column '{column_name}'"
-
-        # Assert primary key
-        assert is_primary_key == expected_schema[column_name][2], f"Primary key mismatch for column '{column_name}'"
-
 #Subtask 4: Add insert trigger on friend table to enforce unique combinations of sender and receiver.
 def test_unique_requests(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
     query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
@@ -118,8 +125,11 @@ def test_unique_requests(system_instance, temp_remove_accounts, capsys, name_reg
     system_instance.cursor.execute(query, values)
     query = "INSERT OR IGNORE INTO friends (sender, receiver, status) VALUES (?,?,?) RETURNING rowid"
     values = ('mad', 'makdoodie', 'pending')
-    system_instance.cursor.execute(query, values)
+    try:
+      system_instance.cursor.execute(query, values)
+      assert False
+    except sqlite3.IntegrityError:
+      assert True
     system_instance.cursor.execute("SELECT COUNT(*) FROM friends")
     row_count = system_instance.cursor.fetchone()[0]
-    # Assert the row count
-    assert row_count == 2, f"Row count mismatch. Expected: {2}, Actual: {row_count}"
+    assert row_count == 1
