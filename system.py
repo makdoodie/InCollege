@@ -149,8 +149,11 @@ class System:
         password varchar2(12), 
         fName varchar2(25), 
         lName varchar2(25),
+        title varchar2(25),
+        infoAbout TEXT,
         university TEXT,
-        major TEXT
+        major TEXT,
+        yearAttended INT
         )
       """
     ) #execute method and cursor object are used to create table if one does not exist
@@ -185,8 +188,7 @@ class System:
     """
     self.cursor.execute(table_acc_settings)
     self.conn.commit()
-
-    #create trigger add account settings trigger on accounts table
+      #create trigger add account settings trigger on accounts table
     default_lang = LANGUAGES[0].replace("'", "''")
     default_lang = f"'{default_lang}'"
     trigger_add_settings = f"""
@@ -257,7 +259,22 @@ class System:
     # turn on foreign key constraint enforcement (off by default in SQLite)
     self.cursor.execute("PRAGMA foreign_keys = ON")
     self.conn.commit()
-    
+# Create the experience table
+    self.cursor.execute("""
+    CREATE TABLE IF NOT EXISTS experience (
+        expID INT PRIMARY KEY,
+        username VARCHAR(25),
+        title TEXT,
+        employer TEXT,
+        date_started TEXT,
+        date_ended TEXT,
+        location TEXT,
+        description TEXT,
+        FOREIGN KEY (username) REFERENCES accounts(username) ON DELETE CASCADE)
+""")
+# Commit the changes and close the connection for experience table
+    self.conn.commit()
+       
     ## Instantiate User Class Here
     self.user = User("guest","","",False)
     ## Menus
@@ -282,6 +299,8 @@ class System:
     self.receiveFriendReqMenu = Menu()
     self.networkMenu = Menu()
     self.displayFriendInfo = Menu()
+    self.profileMenu=Menu()
+    
     
   def __del__(self): #closes connection to db
     self.conn.close()
@@ -413,7 +432,11 @@ class System:
       self.receiveFriendReqMenu.clearBackgroundActions()
       self.receiveFriendReqMenu.clearSelections()
 
-      
+  def profile_menu(self):
+      print("Friend's Profile")
+      print("Under Construction")
+      self.profileMenu.start()  
+    
   def show_pending_message(self):
     # check receivedRequest dictionary to determine opening statement
     self.loadAllFriends()
@@ -430,9 +453,13 @@ class System:
     
   def display_network(self, friend):
     # create a dynamic opening
-    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}\n\nName: {friend.fName} {friend.lName}\nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}""")
-    # provide an option to disconnect from selected connection
+    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}\n\nName: {friend.fName} {friend.lName}""")
+    # \nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}
+  # view Profile adding into the friends connecctions if the frinds has a profile 
+    self.displayFriendInfo.addItem("View Profile",self.profile_menu)
+     # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", lambda: self.disconnectFriend(friend), lambda: True if friend.userName in self.user.acceptedRequests else False)
+    
     self.displayFriendInfo.setExitStatement("Exit")
     self.displayFriendInfo.start()
     # clean up menu
@@ -588,9 +615,18 @@ class System:
     print("Enter Last Name: ", end="")
     lName = input()
     print("Enter University Name: ", end="")
-    university = input()
+    university = input().title()
     print("Enter Major: ", end="")
-    major = input()
+    major = input().title()    
+    title =None 
+    infoAbout = None
+    yearAttended= None
+    # print("Enter Title: ", end="")
+    # title = input()    
+    # print("Enter Information About The Student: ", end="")
+    # infoAbout =input()    
+    # print("Enter years attended: ", end="")
+    # yearAttended = input()
     print("Enter Password: ", end="")
     password = input()
     print("Confirm Password: ", end="")
@@ -598,7 +634,7 @@ class System:
     ## Validate Inputs
     if self.validatePassword(password,passwordCheck) and self.validateUserName(username) and self.validName(fName,lName):
       encrypted_pass = self.encryption(password)
-      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName,university,major) VALUES (?, ?, ?, ?, ?, ?)", (username, encrypted_pass,fName,lName,university,major))
+      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName,title,infoAbout,university,major,yearAttended) VALUES (?,?,?,?,?,?,?,?,?)", (username, encrypted_pass,fName,lName,title,infoAbout,university,major,yearAttended))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
       return self.login
@@ -886,8 +922,8 @@ class System:
     params = (friend.userName, self.user.userName)
     self.cursor.execute(query, params)
     self.conn.commit()
-    
-  
+   
+     
   ## Function for the important links to print
   content = {
 'Copyright Notice': '''
