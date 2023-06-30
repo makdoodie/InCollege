@@ -149,11 +149,12 @@ class System:
         password varchar2(12), 
         fName varchar2(25), 
         lName varchar2(25),
-        title varchar2(25),
-        infoAbout TEXT,
         university TEXT,
         major TEXT,
-        yearAttended INT
+        yearsAttended INT,
+        title varchar2(25),
+        infoAbout TEXT,
+        profile BOOLEAN
         )
       """
     ) #execute method and cursor object are used to create table if one does not exist
@@ -261,13 +262,13 @@ class System:
     self.conn.commit()
 # Create the experience table
     self.cursor.execute("""
-    CREATE TABLE IF NOT EXISTS experience (
+    CREATE TABLE IF NOT EXISTS experiences (
         expID INT PRIMARY KEY,
         username VARCHAR(25),
         title TEXT,
         employer TEXT,
-        date_started TEXT,
-        date_ended TEXT,
+        dateStarted TEXT,
+        dateEnded TEXT,
         location TEXT,
         description TEXT,
         FOREIGN KEY (username) REFERENCES accounts(username) ON DELETE CASCADE)
@@ -299,7 +300,12 @@ class System:
     self.receiveFriendReqMenu = Menu()
     self.networkMenu = Menu()
     self.displayFriendInfo = Menu()
-    self.profileMenu=Menu()
+    self.friendProfileMenu = Menu()
+    self.userProfileMenu = Menu()
+    self.editProfileMenu = Menu()
+    self.titleMenu = Menu()
+    self.majorMenu = Menu()
+    
     
     
   def __del__(self): #closes connection to db
@@ -380,7 +386,7 @@ class System:
       """Performs setup and cleanup for the send friend request menu."""
       # create the dynamic opening statement
       opening = (
-        lambda: f"""Name: {friend.fName} {friend.lName}\n\nUniversity: {friend.university}\n\nMajor: {friend.major}\n
+        lambda: f"""{friend.displayProfile("part")}\n
       {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
         else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
         else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
@@ -407,7 +413,7 @@ class System:
       """Performs setup and cleanup for the receive friend request menu."""
       # create the dynamic opening statement
       opening = (
-        lambda: f"""Name: {friend.fName} {friend.lName}\n\nUniversity: {friend.university}\n\nMajor: {friend.major}\n
+        lambda: f"""{friend.displayProfile("part")}\n
       {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
         else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
         else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
@@ -430,12 +436,7 @@ class System:
       self.receiveFriendReqMenu.start()
       # cleanup the menu
       self.receiveFriendReqMenu.clearBackgroundActions()
-      self.receiveFriendReqMenu.clearSelections()
-
-  def profile_menu(self):
-      print("Friend's Profile")
-      print("Under Construction")
-      self.profileMenu.start()  
+      self.receiveFriendReqMenu.clearSelections()    
     
   def show_pending_message(self):
     # check receivedRequest dictionary to determine opening statement
@@ -453,10 +454,12 @@ class System:
     
   def display_network(self, friend):
     # create a dynamic opening
-    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}\n\nName: {friend.fName} {friend.lName}""")
+    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}""")
     # \nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}
-  # view Profile adding into the friends connecctions if the frinds has a profile 
-    self.displayFriendInfo.addItem("View Profile",self.profile_menu)
+  # view Profile adding into the friends connections if the frinds has a profile 
+    self.displayFriendInfo.addItem("View Profile", 
+                            lambda: self.quick_menu(friend.displayProfile("full")), 
+                            lambda: friend.checkProfile())
      # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", lambda: self.disconnectFriend(friend), lambda: True if friend.userName in self.user.acceptedRequests else False)
     
@@ -479,6 +482,57 @@ class System:
         self.networkMenu.addItem(full_name, lambda usr=user: self.display_network(usr))
     else:
       self.networkMenu.setOpening("You Have No Connections.")
+
+  def user_profile_menu(self):
+    self.userProfileMenu.addBackgroundAction(self.loadUserProfile)
+    self.userProfileMenu.setOpening("Welcome to the Profile Menu")
+    # create a dynamic option based on
+    # if the user created a profile (profile object in user class)
+    self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
+    self.userProfileMenu.addItem("View Profile", lambda: self.quick_menu("Viewing Your Profile"), lambda: True if self.user.checkProfile() == True else False)
+    self.userProfileMenu.setExitStatement("Exit")
+    self.userProfileMenu.start()
+    self.userProfileMenu.clearSelections()
+
+  def edit_profile_menu(self):
+    self.editProfileMenu.setOpening("Choose A Section To Edit:")
+    self.editProfileMenu.addItem("Title", lambda: self.edit_section("title"))
+    self.editProfileMenu.addItem("Major", lambda: self.edit_section("major"))
+    self.editProfileMenu.addItem("University", lambda: self.quick_menu("Enter A University"))
+    self.editProfileMenu.addItem("About", lambda: self.quick_menu("Introduce Yourself"))
+    self.editProfileMenu.addItem("Education", lambda: self.quick_menu("Share Your Educational Background"))
+    self.editProfileMenu.addItem("Experience 1", lambda: self.quick_menu("Share Your Experience"))
+    self.editProfileMenu.addItem("Experience 2", lambda: self.quick_menu("Share Your Experience"))
+    self.editProfileMenu.addItem("Experience 3", lambda: self.quick_menu("Share Your Experience"))
+    self.editProfileMenu.start()
+    self.editProfileMenu.clearSelections()
+
+  def edit_section(self, section):
+    username = self.user.userName
+    if section == "title":
+      print("""--------------\nEditing Title\n--------------\n""")
+      print("Enter A Title: ", end="")
+      title = input()
+      if title:
+        self.user.createdProfile = True
+        title_query = 'UPDATE accounts SET title = ?, profile = 1 WHERE username = ?'
+        params = (title, username)
+        self.cursor.execute(title_query, params)
+        self.conn.commit()
+        self.titleMenu.start()
+    # edit major section in profile
+    elif section == "major":
+      print("""--------------\nEditing Major\n--------------\n""")
+      print("Enter A Major: ", end="")
+      major = input()
+      if major:
+        self.user.createdProfile = True
+        major_query = 'UPDATE accounts SET major = ?, profile = 1 WHERE username = ?'
+        params = (major, username)
+        self.cursor.execute(major_query, params)
+        self.conn.commit()
+        self.majorMenu.start()
+    
     
   def encryption(self, password):
     sha256 = hashlib.sha256()
@@ -617,16 +671,7 @@ class System:
     print("Enter University Name: ", end="")
     university = input().title()
     print("Enter Major: ", end="")
-    major = input().title()    
-    title =None 
-    infoAbout = None
-    yearAttended= None
-    # print("Enter Title: ", end="")
-    # title = input()    
-    # print("Enter Information About The Student: ", end="")
-    # infoAbout =input()    
-    # print("Enter years attended: ", end="")
-    # yearAttended = input()
+    major = input().title() 
     print("Enter Password: ", end="")
     password = input()
     print("Confirm Password: ", end="")
@@ -634,7 +679,7 @@ class System:
     ## Validate Inputs
     if self.validatePassword(password,passwordCheck) and self.validateUserName(username) and self.validName(fName,lName):
       encrypted_pass = self.encryption(password)
-      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName,title,infoAbout,university,major,yearAttended) VALUES (?,?,?,?,?,?,?,?,?)", (username, encrypted_pass,fName,lName,title,infoAbout,university,major,yearAttended))
+      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName,university,major) VALUES (?, ?, ?, ?, ?, ?)", (username, encrypted_pass,fName,lName,university,major))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
       return self.login
@@ -922,6 +967,27 @@ class System:
     params = (friend.userName, self.user.userName)
     self.cursor.execute(query, params)
     self.conn.commit()
+
+
+  def loadUserProfile(self):
+    username = self.user.userName
+    profile_fields = 'title, major, university, infoAbout, yearsAttended, profile'
+    profile_query = f"""SELECT {profile_fields} FROM accounts where username = ?"""
+    self.cursor.execute(profile_query, (username,))
+    userProfile = self.cursor.fetchone()
+    if userProfile:
+      if userProfile[5] == 1:
+        self.user.createdProfile = True
+      self.user.profile(title=userProfile[0],
+                      about=userProfile[3],
+                      education=None,
+                      experience=None)
+
+  
+    
+    
+
+  
    
      
   ## Function for the important links to print
@@ -1085,6 +1151,8 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
       self.mainMenu.addBackgroundAction(self.show_pending_message)
+      self.mainMenu.addBackgroundAction(self.loadUserProfile)
+      self.mainMenu.addItem('Profile', self.user_profile_menu)
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       # Find a Friend in mainMenu now Friends
       self.mainMenu.addItem('Friends', self.friend_menu)
