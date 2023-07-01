@@ -28,7 +28,7 @@ def temp_remove_accounts(system_instance):
 
 @pytest.fixture #Creates an account to test with in the database
 def name_register(system_instance, temp_remove_accounts, capsys):
-  inputs = ['2', 'ahmad', 'ah', 'mad','usf','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+  inputs = ['2', 'ahmad', 'ah', 'mad','university of south florida','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
