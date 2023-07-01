@@ -1,7 +1,7 @@
 import sqlite3
 import re
 import hashlib
-from user import User
+from user import User, education, experience, profile
 import os
 
 #list of languages currently supported by InCollege
@@ -263,7 +263,7 @@ class System:
 # Create the experience table
     self.cursor.execute("""
     CREATE TABLE IF NOT EXISTS experiences (
-        expID INT PRIMARY KEY,
+        expID INTEGER PRIMARY KEY,
         username VARCHAR(25),
         title TEXT,
         employer TEXT,
@@ -303,8 +303,28 @@ class System:
     self.friendProfileMenu = Menu()
     self.userProfileMenu = Menu()
     self.editProfileMenu = Menu()
+    self.viewUserProfile = Menu()
     self.titleMenu = Menu()
-    self.majorMenu = Menu()
+    self.aboutMenu = Menu()
+    self.educationMenu = Menu()
+    self.uniMenu = Menu()
+    self.degreeMenu = Menu()
+    self.yearsMenu = Menu()
+    self.experience1Menu = Menu()
+    self.title1Menu = Menu()
+    self.employer1Menu = Menu()
+    self.sDate1Menu = Menu()
+    self.eDate1Menu = Menu()
+    self.location1Menu = Menu()
+    self.description1Menu = Menu()
+    self.experience2Menu = Menu()
+    self.title2Menu = Menu()
+    self.employer2Menu = Menu()
+    self.sDate2Menu = Menu()
+    self.eDate2Menu = Menu()
+    self.location2Menu = Menu()
+    self.description2Menu = Menu()
+    
     
     
     
@@ -386,7 +406,7 @@ class System:
       """Performs setup and cleanup for the send friend request menu."""
       # create the dynamic opening statement
       opening = (
-        lambda: f"""{friend.displayProfile("part")}\n
+        lambda: f"""{self.displayProfile("part", friend)}\n
       {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
         else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
         else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
@@ -413,7 +433,7 @@ class System:
       """Performs setup and cleanup for the receive friend request menu."""
       # create the dynamic opening statement
       opening = (
-        lambda: f"""{friend.displayProfile("part")}\n
+        lambda: f"""{self.displayProfile("part", friend)}\n
       {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
         else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
         else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
@@ -458,10 +478,12 @@ class System:
     # \nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}
   # view Profile adding into the friends connections if the frinds has a profile 
     self.displayFriendInfo.addItem("View Profile", 
-                            lambda: self.quick_menu(friend.displayProfile("full")), 
-                            lambda: friend.checkProfile())
+                                   lambda: self.quick_menu(self.displayProfile("full")), 
+                                   lambda: friend.checkProfile() is not None)
      # provide an option to disconnect from selected connection
-    self.displayFriendInfo.addItem("Disconnect", lambda: self.disconnectFriend(friend), lambda: True if friend.userName in self.user.acceptedRequests else False)
+    self.displayFriendInfo.addItem("Disconnect", 
+                                   lambda: self.disconnectFriend(friend), 
+                                   lambda: True if friend.userName in self.user.acceptedRequests else False)
     
     self.displayFriendInfo.setExitStatement("Exit")
     self.displayFriendInfo.start()
@@ -483,55 +505,268 @@ class System:
     else:
       self.networkMenu.setOpening("You Have No Connections.")
 
+  def education_menu(self):
+    if not self.educationMenu.hasBackgroundActions():
+      self.educationMenu.addBackgroundAction(self.loadUserProfile)
+    if not self.educationMenu.hasOpening():
+      self.educationMenu.setOpening("Choose A Section To Edit:")
+    if len(self.educationMenu.selections) == 0:
+      self.educationMenu.addItem("University", 
+                                 lambda: self.edit_section("uni"))
+      self.educationMenu.addItem("Degree", 
+                                 lambda: self.edit_section("deg"))
+      self.educationMenu.addItem("Years Attended", 
+                                 lambda: self.edit_section("years"))
+    self.educationMenu.start()
+
+  def experience1_menu(self):
+    if not self.experience1Menu.hasBackgroundActions():
+      self.experience1Menu.addBackgroundAction(self.loadUserProfile)
+    if not self.experience1Menu.hasOpening():
+      self.experience1Menu.setOpening("Share Your Experience: ")
+    if len(self.experience1Menu.selections) == 0:
+      self.experience1Menu.addItem("Title", 
+                                   lambda: self.edit_experiences("title1"))
+      self.experience1Menu.addItem("Employer", 
+                                   lambda: self.quick_menu(""))
+      self.experience1Menu.addItem("Start Date", 
+                                   lambda: self.quick_menu(""))
+      self.experience1Menu.addItem("End Date", 
+                                   lambda: self.quick_menu(""))
+      self.experience1Menu.addItem("Location", 
+                                   lambda: self.quick_menu(""))
+      self.experience1Menu.addItem("Description", 
+                                   lambda: self.quick_menu(""))
+    self.experience1Menu.start()
+
+  def experience2_menu(self):
+    if not self.experience2Menu.hasBackgroundActions():
+      self.experience2Menu.addBackgroundAction(self.loadUserProfile)
+    if not self.experience2Menu.hasOpening():
+      self.experience2Menu.setOpening("Share Your Experience: ")
+    if len(self.experience2Menu.selections) == 0:
+      self.experience2Menu.addItem("Title", 
+                                   lambda: self.edit_experiences("title2"))
+      self.experience2Menu.addItem("Employer", 
+                                   lambda: self.quick_menu(""))
+      self.experience2Menu.addItem("Start Date", 
+                                   lambda: self.quick_menu(""))
+      self.experience2Menu.addItem("End Date", 
+                                   lambda: self.quick_menu(""))
+      self.experience2Menu.addItem("Location", 
+                                   lambda: self.quick_menu(""))
+      self.experience2Menu.addItem("Description", 
+                                   lambda: self.quick_menu(""))
+    self.experience2Menu.start()
+
+  
+  def check_user_profile(self):
+    query = 'SELECT profile FROM accounts WHERE username = ?'
+    self.cursor.execute(query,(self.user.userName,))
+    result = self.cursor.fetchone()
+    # if true, create a dummy profile for the user
+    if result[0]:
+      self.user.createdProfile = profile()
+  
   def user_profile_menu(self):
     self.userProfileMenu.addBackgroundAction(self.loadUserProfile)
+    self.userProfileMenu.addBackgroundAction(self.check_user_profile)
     self.userProfileMenu.setOpening("Welcome to the Profile Menu")
     # create a dynamic option based on
     # if the user created a profile (profile object in user class)
     self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
-    self.userProfileMenu.addItem("View Profile", lambda: self.quick_menu("Viewing Your Profile"), lambda: True if self.user.checkProfile() == True else False)
+    self.userProfileMenu.addItem("View Profile", 
+                                 lambda: self.user.displayProfile("full"), 
+                                 lambda: self.user.checkProfile())
     self.userProfileMenu.setExitStatement("Exit")
     self.userProfileMenu.start()
     self.userProfileMenu.clearSelections()
 
   def edit_profile_menu(self):
-    self.editProfileMenu.setOpening("Choose A Section To Edit:")
-    self.editProfileMenu.addItem("Title", lambda: self.edit_section("title"))
-    self.editProfileMenu.addItem("Major", lambda: self.edit_section("major"))
-    self.editProfileMenu.addItem("University", lambda: self.quick_menu("Enter A University"))
-    self.editProfileMenu.addItem("About", lambda: self.quick_menu("Introduce Yourself"))
-    self.editProfileMenu.addItem("Education", lambda: self.quick_menu("Share Your Educational Background"))
-    self.editProfileMenu.addItem("Experience 1", lambda: self.quick_menu("Share Your Experience"))
-    self.editProfileMenu.addItem("Experience 2", lambda: self.quick_menu("Share Your Experience"))
-    self.editProfileMenu.addItem("Experience 3", lambda: self.quick_menu("Share Your Experience"))
+    # also for view menu
+    self.userProfileMenu.addBackgroundAction(self.loadUserProfile)
+    if not self.editProfileMenu.hasBackgroundActions():
+      self.editProfileMenu.addBackgroundAction(self.loadUserProfile)
+    if not self.editProfileMenu.hasOpening():
+      self.editProfileMenu.setOpening("Choose A Section To Edit:")
+    if len(self.editProfileMenu.selections) == 0:
+      self.editProfileMenu.addItem("Title", 
+                                   lambda: self.edit_section("head"), 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("About", 
+                                   lambda: self.edit_section("about"), 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Education", 
+                                   lambda: self.education_menu, 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Experience 1", 
+                                   lambda: self.experience1_menu, 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Experience 2", 
+                                   lambda: self.experience2_menu, 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Experience 3", 
+                                   lambda: self.quick_menu("Share Your Experience"), 
+                                   lambda: self.user.checkProfile)
     self.editProfileMenu.start()
-    self.editProfileMenu.clearSelections()
+    
 
   def edit_section(self, section):
     username = self.user.userName
-    if section == "title":
+    # edit profile title and update db
+    if section == "head":
+      old_headline = self.user.profile.headline
       print("""--------------\nEditing Title\n--------------\n""")
+      if old_headline == None:
+        print("Title: N/A\n")
+      else:
+        print("Title:", old_headline, "\n")
       print("Enter A Title: ", end="")
-      title = input()
-      if title:
-        self.user.createdProfile = True
-        title_query = 'UPDATE accounts SET title = ?, profile = 1 WHERE username = ?'
-        params = (title, username)
-        self.cursor.execute(title_query, params)
+      headline = input()
+      if headline:
+        headline_query = 'UPDATE accounts SET title = ?, profile = True WHERE username = ?'
+        params = (headline, username)
+        self.cursor.execute(headline_query, params)
         self.conn.commit()
-        self.titleMenu.start()
-    # edit major section in profile
-    elif section == "major":
-      print("""--------------\nEditing Major\n--------------\n""")
-      print("Enter A Major: ", end="")
-      major = input()
-      if major:
-        self.user.createdProfile = True
-        major_query = 'UPDATE accounts SET major = ?, profile = 1 WHERE username = ?'
-        params = (major, username)
-        self.cursor.execute(major_query, params)
+      self.titleMenu.start()
+    elif section == "about":
+      old_about = self.user.profile.about
+      print("""--------------\nEditing About\n--------------\n""")
+      if old_about == None:
+        print("About: N\A\n")
+      else:
+        print("About:", old_about, "\n")
+      print("Introduce Yourself: ", end="")
+      about = input()
+      if about:
+        about_query = 'UPDATE accounts SET infoAbout = ?, profile = True WHERE username = ?'
+        params = (about, username)
+        self.cursor.execute(about_query, params)
         self.conn.commit()
-        self.majorMenu.start()
+      self.aboutMenu.start()
+    elif section == "uni":
+      old_uni = self.user.profile.education.university.title()
+      print("""------------------\nEditing University\n------------------\n""")
+      if old_uni == None: 
+        print("University: N/A\n")
+      else:
+        print("University:", old_uni, "\n")
+      print("Enter Your University: ", end="")
+      uni = input()
+      if uni:
+        uni_query = 'UPDATE accounts SET university = ?, profile = True WHERE username = ?'
+        params = (uni, username)
+        self.cursor.execute(uni_query, params)
+        self.conn.commit()
+      self.uniMenu.start()
+    elif section == "deg":
+      old_degree = self.user.profile.education.major.title()
+      print("""--------------\nEditing Degree\n--------------\n""")
+      if old_degree == None:
+        print("Degree: N\A\n")
+      else:
+        print("Degree:", old_degree, "\n")
+      print("Enter Your Degree: ", end="")
+      degree = input()
+      if degree:
+        degree_query = 'UPDATE accounts SET major = ?, profile = True WHERE username = ?'
+        params = (degree, username)
+        self.cursor.execute(degree_query, params)
+        self.conn.commit()
+      self.degreeMenu.start()
+    elif section == "years":
+      old_years = self.user.profile.education.yearsAttended
+      print("""--------------\nEditing Years\n--------------\n""")
+      if old_years == None:
+        print("Years Attended: N\A\n")
+      else: 
+        print("Years Attended:", old_years, "\n")
+      print("Enter Years Attended: ", end="")
+      years = input()
+      if years.isnumeric():
+        years_query = 'UPDATE accounts SET yearsAttended = ?, profile = True WHERE username = ?'
+        params = (years, username)
+        self.cursor.execute(years_query, params)
+        self.conn.commit()
+      else: 
+        print("\n\nError: Input not a number")
+      self.yearsMenu.start()
+
+
+  def edit_experiences(self, section):
+    username = self.user.userName
+    if section == "title1":
+      print("""--------------\nEditing Title\n--------------\n""")
+      search_query = 'SELECT title, ROWID FROM experiences WHERE username = ?'
+      self.cursor.execute(search_query, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if result: 
+        # get the rowID of first experience
+        rowID = result[0][1]
+        # get title of first experience
+        old_title = result[0][0]
+        if old_title == None:
+          print("Title: N/A\n")
+        else:
+          print("Title:", old_title, "\n")
+        # prompt user for input
+        print("Enter A Title: ", end="")
+        title = input()
+        # if valid input then update first exp in db
+        if title:
+          update_query = 'UPDATE experiences SET title = ? WHERE username = ? AND ROWID = ?'
+          self.cursor.execute(update_query, (title, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          update_profile_query = 'UPDATE accounts SET profile = True WHERE username = ?'
+          self.cursor.execute(update_profile_query, (username,))
+          self.conn.commit()
+      else:
+        print("Title: N/A\n")
+        print("Enter A Title: ", end="")
+        title = input()
+        insert_query = 'INSERT INTO experiences (username, title) VALUES (?, ?)'
+        self.cursor.execute(insert_query, (username, title))
+        self.conn.commit()
+      self.title1Menu.start()
+    # edit second exp title
+    elif section == "title2":
+      print("""--------------\nEditing Title\n--------------\n""")
+      search_query = 'SELECT title, ROWID FROM experiences WHERE username = ?'
+      self.cursor.execute(search_query, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result) > 1: 
+        # get the rowID of first experience
+        rowID = result[1][1]
+        # get title of first experience
+        old_title = result[1][0]
+        if old_title == None:
+          print("Title: N/A\n")
+        else:
+          print("Title:", old_title, "\n")
+        # prompt user for input
+        print("Enter A Title: ", end="")
+        title = input()
+        # if valid input then update first exp in db
+        if title:
+          update_query = 'UPDATE experiences SET title = ? WHERE username = ? AND ROWID = ?'
+          self.cursor.execute(update_query, (title, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          update_profile_query = 'UPDATE accounts SET profile = True WHERE username = ?'
+          self.cursor.execute(update_profile_query, (username,))
+          self.conn.commit()
+      else:
+        print("Title: N/A\n")
+        print("Enter A Title: ", end="")
+        title = input()
+        insert_query = 'INSERT INTO experiences (username, title) VALUES (?, ?)'
+        self.cursor.execute(insert_query, (username, title))
+        self.conn.commit()
+      self.title2Menu.start()
+
     
     
   def encryption(self, password):
@@ -970,23 +1205,42 @@ class System:
 
 
   def loadUserProfile(self):
-    username = self.user.userName
-    profile_fields = 'title, major, university, infoAbout, yearsAttended, profile'
-    profile_query = f"""SELECT {profile_fields} FROM accounts where username = ?"""
-    self.cursor.execute(profile_query, (username,))
-    userProfile = self.cursor.fetchone()
-    if userProfile:
-      if userProfile[5] == 1:
-        self.user.createdProfile = True
-      self.user.profile(title=userProfile[0],
-                      about=userProfile[3],
-                      education=None,
-                      experience=None)
-
-  
-    
-    
-
+    userName = self.user.userName
+    fields = """
+      university, major, yearsAttended, accounts.title AS headline, infoAbout, profile, expID, experiences.title AS title, employer, dateStarted, dateEnded, location, description
+      """
+    query = f"""
+      SELECT {fields} FROM accounts LEFT JOIN experiences ON accounts.username = experiences.username WHERE accounts.username = ?
+      """
+    self.cursor.execute(query, (userName,))
+    userProfile = self.cursor.fetchall()    
+    if len(userProfile):
+      if userProfile[0][5] == False:
+        update_query = 'UPDATE accounts SET profile = True WHERE username = ?'
+        self.cursor.execute(update_query, (userName,))
+        self.conn.commit()
+      userEducation = education(university=userProfile[0][0],
+                                major=userProfile[0][1],
+                                yearsAttended=userProfile[0][2])
+      # list comprehension to create exp as a list
+      experiences = [row[6:] for row in userProfile]
+      userExperiences = []
+      if not(len(experiences) == 1 and all(e is None for e in experiences)):
+        for exp in experiences:
+          userExperiences.append(experience(ID=exp[0],
+                                 title=exp[1],
+                                 employer=exp[2],
+                                 startDate=exp[3],
+                                 endDate=exp[4],
+                                 location=exp[5],
+                                 description=exp[6]))
+      self.user.profile = profile(headline=userProfile[0][3],
+                                  about=userProfile[0][4],
+                                  education=userEducation,
+                                  experiences=userExperiences)
+    else:
+      print("Error: User not found.")
+      self.user.profile = None
   
    
      
