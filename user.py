@@ -1,7 +1,7 @@
 class User:
   ## Not in Use Yet but will hold saved progress and relationships eventually
   ## Probably instantiate in system class and hold logged in status as well
-  def __init__(self, userName, fName, lName, loggedOn=False, university=None, major=None, profile=None):
+  def __init__(self, userName, fName, lName, loggedOn=False, university=None, major=None, createdProfile=None):
     from system import LANGUAGES
     self.userName = userName
     self.fName = fName
@@ -9,7 +9,7 @@ class User:
     # added university and major fields
     self.university = university
     self.major = major
-    self.profile = profile
+    self.createdProfile = createdProfile
     self.email = True
     self.sms = True
     self.targetedAds = True
@@ -45,12 +45,12 @@ class User:
     
   # check if profile has been created
   def checkProfile(self):
-    return self.profile is not None
+    return self.createdProfile is not None
 
   def displayProfile(self, mode):
     if mode == "full":
-      if self.profile:
-        print(f"Name: {self.fName} {self.lName}\nTitle: {self.profile.headline}\nAbout: {self.profile.about}\nUiversity: {self.profile.education.university}\nExperieneces: {self.profile.experiences[0].title}")
+      if self.createdProfile:
+        print(f"Name: {self.fName} {self.lName}\nTitle: {self.profile.headline}\nAbout: {self.profile.about}\nUniversity: {self.profile.education.university}\nExperieneces: {self.profile.experiences[0].title if len(self.profile.experiences) == 1 else False}")
     elif mode == "part":
       return f"Name: {self.fName} {self.lName}"
 
