@@ -520,7 +520,13 @@ class System:
     result = self.cursor.fetchone()
     # if true, create a dummy profile for the user
     if result[0]:
-      self.user.createdProfile = profile()
+      self.user.Profile = profile()
+
+  def view_user_profile(self):
+    if not self.viewUserProfile.hasBackgroundActions():
+      self.viewUserProfile.addBackgroundAction(self.loadUserProfile)
+    print(self.user.displayProfile("full"))
+    self.viewUserProfile.start()
   
   def user_profile_menu(self):
     if not self.userProfileMenu.hasBackgroundActions():
@@ -532,7 +538,7 @@ class System:
       # if the user created a profile (profile object in user class)
       self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
       self.userProfileMenu.addItem("View Profile", 
-                                   lambda: self.user.displayProfile("full"), 
+                                   lambda: self.view_user_profile, 
                                    lambda: self.user.checkProfile())
       self.userProfileMenu.setExitStatement("Exit")
     self.userProfileMenu.start()
