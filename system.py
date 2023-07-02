@@ -1,4 +1,5 @@
 import sqlite3
+import datetime
 import re
 import hashlib
 from user import User, education, experience, profile
@@ -152,7 +153,7 @@ class System:
         university TEXT,
         major TEXT,
         yearsAttended INT,
-        title varchar2(25),
+        title varchar2(50),
         infoAbout TEXT,
         profile BOOLEAN
         )
@@ -324,6 +325,13 @@ class System:
     self.eDate2Menu = Menu()
     self.location2Menu = Menu()
     self.description2Menu = Menu()
+    self.experience3Menu = Menu()
+    self.title3Menu = Menu()
+    self.employer3Menu = Menu()
+    self.sDate3Menu = Menu()
+    self.eDate3Menu = Menu()
+    self.location3Menu = Menu()
+    self.description3Menu = Menu()
     
     
     
@@ -406,7 +414,7 @@ class System:
       """Performs setup and cleanup for the send friend request menu."""
       # create the dynamic opening statement
       opening = (
-        lambda: f"""{self.displayProfile("part", friend)}\n
+        lambda: f"""{friend.displayProfile("part")}\n
       {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
         else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
         else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
@@ -433,7 +441,7 @@ class System:
       """Performs setup and cleanup for the receive friend request menu."""
       # create the dynamic opening statement
       opening = (
-        lambda: f"""{self.displayProfile("part", friend)}\n
+        lambda: f"""{friend.displayProfile("part")}\n
       {"You Have Sent a Friend Request to This User." if friend.userName in self.user.sentRequests 
         else "You Have Received a Friend Request From This User." if friend.userName in self.user.receivedRequests 
         else "You Are Friends With This User." if friend.userName in self.user.acceptedRequests 
@@ -478,8 +486,8 @@ class System:
     # \nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}
   # view Profile adding into the friends connections if the frinds has a profile 
     self.displayFriendInfo.addItem("View Profile", 
-                                   lambda: self.quick_menu(self.displayProfile("full")), 
-                                   lambda: friend.checkProfile() is not None)
+                                   lambda: self.quick_menu(friend.displayProfile("full")), 
+                                   lambda: friend.checkProfile()is not None)
      # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", 
                                    lambda: self.disconnectFriend(friend), 
@@ -505,6 +513,58 @@ class System:
     else:
       self.networkMenu.setOpening("You Have No Connections.")
 
+  
+  def check_user_profile(self):
+    query = 'SELECT profile FROM accounts WHERE username = ?'
+    self.cursor.execute(query,(self.user.userName,))
+    result = self.cursor.fetchone()
+    # if true, create a dummy profile for the user
+    if result[0]:
+      self.user.createdProfile = profile()
+  
+  def user_profile_menu(self):
+    if not self.userProfileMenu.hasBackgroundActions():
+      self.userProfileMenu.addBackgroundAction(self.check_user_profile)
+    if not self.userProfileMenu.hasOpening():
+      self.userProfileMenu.setOpening("Welcome to the Profile Menu")
+    if len(self.userProfileMenu.selections) == 0:
+      # create a dynamic option based on
+      # if the user created a profile (profile object in user class)
+      self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
+      self.userProfileMenu.addItem("View Profile", 
+                                   lambda: self.user.displayProfile("full"), 
+                                   lambda: self.user.checkProfile())
+      self.userProfileMenu.setExitStatement("Exit")
+    self.userProfileMenu.start()
+
+  
+  def edit_profile_menu(self):
+    # also for view menu
+    if not self.editProfileMenu.hasBackgroundActions():
+      self.editProfileMenu.addBackgroundAction(self.loadUserProfile)
+    if not self.editProfileMenu.hasOpening():
+      self.editProfileMenu.setOpening("Choose A Section To Edit:")
+    if len(self.editProfileMenu.selections) == 0:
+      self.editProfileMenu.addItem("Title", 
+                                   lambda: self.edit_section("head"), 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("About", 
+                                   lambda: self.edit_section("about"), 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Education", 
+                                   lambda: self.education_menu, 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Experience 1", 
+                                   lambda: self.experience1_menu, 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Experience 2", 
+                                   lambda: self.experience2_menu, 
+                                   lambda: self.user.checkProfile)
+      self.editProfileMenu.addItem("Experience 3",
+                                   lambda: self.experience3_menu, 
+                                   lambda: self.user.checkProfile)
+    self.editProfileMenu.start()
+
   def education_menu(self):
     if not self.educationMenu.hasBackgroundActions():
       self.educationMenu.addBackgroundAction(self.loadUserProfile)
@@ -526,17 +586,17 @@ class System:
       self.experience1Menu.setOpening("Share Your Experience: ")
     if len(self.experience1Menu.selections) == 0:
       self.experience1Menu.addItem("Title", 
-                                   lambda: self.edit_experiences("title1"))
+                                   lambda: self.edit_exp_title("title1"))
       self.experience1Menu.addItem("Employer", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_employer("employer1"))
       self.experience1Menu.addItem("Start Date", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_startDate("start1"))
       self.experience1Menu.addItem("End Date", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_endDate("end1"))
       self.experience1Menu.addItem("Location", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_location("location1"))
       self.experience1Menu.addItem("Description", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_description("description1"))
     self.experience1Menu.start()
 
   def experience2_menu(self):
@@ -546,69 +606,38 @@ class System:
       self.experience2Menu.setOpening("Share Your Experience: ")
     if len(self.experience2Menu.selections) == 0:
       self.experience2Menu.addItem("Title", 
-                                   lambda: self.edit_experiences("title2"))
+                                   lambda: self.edit_exp_title("title2"))
       self.experience2Menu.addItem("Employer", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_employer("employer2"))
       self.experience2Menu.addItem("Start Date", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_startDate("start2"))
       self.experience2Menu.addItem("End Date", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_endDate("end2"))
       self.experience2Menu.addItem("Location", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_location("location2"))
       self.experience2Menu.addItem("Description", 
-                                   lambda: self.quick_menu(""))
+                                   lambda: self.edit_exp_description("description2"))
     self.experience2Menu.start()
 
-  
-  def check_user_profile(self):
-    query = 'SELECT profile FROM accounts WHERE username = ?'
-    self.cursor.execute(query,(self.user.userName,))
-    result = self.cursor.fetchone()
-    # if true, create a dummy profile for the user
-    if result[0]:
-      self.user.createdProfile = profile()
-  
-  def user_profile_menu(self):
-    self.userProfileMenu.addBackgroundAction(self.loadUserProfile)
-    self.userProfileMenu.addBackgroundAction(self.check_user_profile)
-    self.userProfileMenu.setOpening("Welcome to the Profile Menu")
-    # create a dynamic option based on
-    # if the user created a profile (profile object in user class)
-    self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
-    self.userProfileMenu.addItem("View Profile", 
-                                 lambda: self.user.displayProfile("full"), 
-                                 lambda: self.user.checkProfile())
-    self.userProfileMenu.setExitStatement("Exit")
-    self.userProfileMenu.start()
-    self.userProfileMenu.clearSelections()
-
-  def edit_profile_menu(self):
-    # also for view menu
-    self.userProfileMenu.addBackgroundAction(self.loadUserProfile)
-    if not self.editProfileMenu.hasBackgroundActions():
-      self.editProfileMenu.addBackgroundAction(self.loadUserProfile)
-    if not self.editProfileMenu.hasOpening():
-      self.editProfileMenu.setOpening("Choose A Section To Edit:")
-    if len(self.editProfileMenu.selections) == 0:
-      self.editProfileMenu.addItem("Title", 
-                                   lambda: self.edit_section("head"), 
-                                   lambda: self.user.checkProfile)
-      self.editProfileMenu.addItem("About", 
-                                   lambda: self.edit_section("about"), 
-                                   lambda: self.user.checkProfile)
-      self.editProfileMenu.addItem("Education", 
-                                   lambda: self.education_menu, 
-                                   lambda: self.user.checkProfile)
-      self.editProfileMenu.addItem("Experience 1", 
-                                   lambda: self.experience1_menu, 
-                                   lambda: self.user.checkProfile)
-      self.editProfileMenu.addItem("Experience 2", 
-                                   lambda: self.experience2_menu, 
-                                   lambda: self.user.checkProfile)
-      self.editProfileMenu.addItem("Experience 3", 
-                                   lambda: self.quick_menu("Share Your Experience"), 
-                                   lambda: self.user.checkProfile)
-    self.editProfileMenu.start()
+  def experience3_menu(self):
+    if not self.experience3Menu.hasBackgroundActions():
+      self.experience3Menu.addBackgroundAction(self.loadUserProfile)
+    if not self.experience3Menu.hasOpening():
+      self.experience3Menu.setOpening("Share Your Experience: ")
+    if len(self.experience3Menu.selections) == 0:
+      self.experience3Menu.addItem("Title", 
+                                   lambda: self.edit_exp_title("title3"))
+      self.experience3Menu.addItem("Employer", 
+                                   lambda: self.edit_exp_employer("employer3"))
+      self.experience3Menu.addItem("Start Date", 
+                                   lambda: self.edit_exp_startDate("start3"))
+      self.experience3Menu.addItem("End Date", 
+                                   lambda: self.edit_exp_endDate("end3"))
+      self.experience3Menu.addItem("Location", 
+                                   lambda: self.edit_exp_location("location3"))
+      self.experience3Menu.addItem("Description", 
+                                   lambda: self.edit_exp_description("description3"))
+    self.experience3Menu.start()
     
 
   def edit_section(self, section):
@@ -633,7 +662,7 @@ class System:
       old_about = self.user.profile.about
       print("""--------------\nEditing About\n--------------\n""")
       if old_about == None:
-        print("About: N\A\n")
+        print("About: N/A\n")
       else:
         print("About:", old_about, "\n")
       print("Introduce Yourself: ", end="")
@@ -663,7 +692,7 @@ class System:
       old_degree = self.user.profile.education.major.title()
       print("""--------------\nEditing Degree\n--------------\n""")
       if old_degree == None:
-        print("Degree: N\A\n")
+        print("Degree: N/A\n")
       else:
         print("Degree:", old_degree, "\n")
       print("Enter Your Degree: ", end="")
@@ -678,7 +707,7 @@ class System:
       old_years = self.user.profile.education.yearsAttended
       print("""--------------\nEditing Years\n--------------\n""")
       if old_years == None:
-        print("Years Attended: N\A\n")
+        print("Years Attended: N/A\n")
       else: 
         print("Years Attended:", old_years, "\n")
       print("Enter Years Attended: ", end="")
@@ -693,18 +722,23 @@ class System:
       self.yearsMenu.start()
 
 
-  def edit_experiences(self, section):
+  def edit_exp_title(self, section):
     username = self.user.userName
+    # title queries
+    search_title = 'SELECT title, ROWID FROM experiences WHERE username = ?'
+    insert_title = 'INSERT INTO experiences (username, title) VALUES (?, ?)'
+    update_title = 'UPDATE experiences SET title = ? WHERE username = ? AND ROWID = ?'
+    # update profile 
+    update_profile = 'UPDATE accounts SET profile = True WHERE username = ?'
+
     if section == "title1":
       print("""--------------\nEditing Title\n--------------\n""")
-      search_query = 'SELECT title, ROWID FROM experiences WHERE username = ?'
-      self.cursor.execute(search_query, (username,))
+      self.cursor.execute(search_title, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
       if result: 
         # get the rowID of first experience
         rowID = result[0][1]
-        # get title of first experience
         old_title = result[0][0]
         if old_title == None:
           print("Title: N/A\n")
@@ -715,32 +749,34 @@ class System:
         title = input()
         # if valid input then update first exp in db
         if title:
-          update_query = 'UPDATE experiences SET title = ? WHERE username = ? AND ROWID = ?'
-          self.cursor.execute(update_query, (title, username, rowID))
+          self.cursor.execute(update_title, (title, username, rowID))
           self.conn.commit()
           # set profile to true in accounts table
-          update_profile_query = 'UPDATE accounts SET profile = True WHERE username = ?'
-          self.cursor.execute(update_profile_query, (username,))
+          self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
       else:
         print("Title: N/A\n")
         print("Enter A Title: ", end="")
         title = input()
-        insert_query = 'INSERT INTO experiences (username, title) VALUES (?, ?)'
-        self.cursor.execute(insert_query, (username, title))
-        self.conn.commit()
+        if title:
+          self.cursor.execute(insert_title, (username, title))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
       self.title1Menu.start()
-    # edit second exp title
     elif section == "title2":
       print("""--------------\nEditing Title\n--------------\n""")
-      search_query = 'SELECT title, ROWID FROM experiences WHERE username = ?'
-      self.cursor.execute(search_query, (username,))
+      self.cursor.execute(search_title, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
       if len(result) > 1: 
-        # get the rowID of first experience
+        # get the rowID of second experience
         rowID = result[1][1]
-        # get title of first experience
+        # get title of second experience
         old_title = result[1][0]
         if old_title == None:
           print("Title: N/A\n")
@@ -749,26 +785,705 @@ class System:
         # prompt user for input
         print("Enter A Title: ", end="")
         title = input()
-        # if valid input then update first exp in db
+        # if valid input then update second exp in db
         if title:
-          update_query = 'UPDATE experiences SET title = ? WHERE username = ? AND ROWID = ?'
-          self.cursor.execute(update_query, (title, username, rowID))
+          self.cursor.execute(update_title, (title, username, rowID))
           self.conn.commit()
           # set profile to true in accounts table
-          update_profile_query = 'UPDATE accounts SET profile = True WHERE username = ?'
-          self.cursor.execute(update_profile_query, (username,))
+          self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
       else:
         print("Title: N/A\n")
         print("Enter A Title: ", end="")
         title = input()
-        insert_query = 'INSERT INTO experiences (username, title) VALUES (?, ?)'
-        self.cursor.execute(insert_query, (username, title))
-        self.conn.commit()
+        if title:
+          self.cursor.execute(insert_title, (username, title))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
       self.title2Menu.start()
+    elif section == "title3":
+      print("""--------------\nEditing Title\n--------------\n""")
+      self.cursor.execute(search_title, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result) > 2: 
+        # get the rowID of third experience
+        rowID = result[2][1]
+        old_title = result[2][0]
+        if old_title == None:
+          print("Title: N/A\n")
+        else:
+          print("Title:", old_title, "\n")
+        # prompt user for input
+        print("Enter A Title: ", end="")
+        title = input()
+        # if valid input then update third exp in db
+        if title:
+          self.cursor.execute(update_title, (title, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Title: N/A\n")
+        print("Enter A Title: ", end="")
+        title = input()
+        if title:
+          self.cursor.execute(insert_title, (username, title))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      self.title3Menu.start()
+      
 
-    
-    
+  def edit_exp_employer(self, section):
+    username = self.user.userName
+    # employer queries
+    search_employer = 'SELECT employer, ROWID FROM experiences WHERE username = ?'
+    insert_employer = 'INSERT INTO experiences (username, employer) VALUES (?, ?)'
+    update_employer = 'UPDATE experiences SET employer = ? WHERE username = ? AND ROWID = ?'
+   # update profile 
+    update_profile = 'UPDATE accounts SET profile = True WHERE username = ?'
+
+    if section == "employer1":
+      print("""----------------\nEditing Employer\n----------------\n""")
+      self.cursor.execute(search_employer, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[0][1]
+        old_employer = result[0][0]
+        if old_employer == None:
+          print("Employer: N/A\n")
+        else:
+          print("Employer:", old_employer, "\n")
+        print("Enter Employer: ", end="")
+        employer = input()
+        if employer:
+          self.cursor.execute(update_employer, (employer, username, rowID))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Employer: N/A\n")
+        print("Enter Employer: ", end="")
+        employer = input()
+        if employer:
+          self.cursor.execute(insert_employer, (username, employer))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else: 
+          print("\nInvalid input. Please try again.")
+      self.employer1Menu.start()
+    elif section == "employer2":
+      print("""----------------\nEditing Employer\n----------------\n""")
+      self.cursor.execute(search_employer, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[1][1]
+        old_employer = result[1][0]
+        if old_employer == None:
+          print("Employer: N/A\n")
+        else:
+          print("Employer:", old_employer, "\n")
+        print("Enter Employer: ", end="")
+        employer = input()
+        if employer:
+          self.cursor.execute(update_employer, (employer, username, rowID))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Employer: N/A\n")
+        print("Enter Employer: ", end="")
+        employer = input()
+        if employer:
+          self.cursor.execute(insert_employer, (username, employer))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else: 
+          print("\nInvalid input. Please try again.")
+      self.employer2Menu.start()
+    elif section == "employer3":
+      print("""----------------\nEditing Employer\n----------------\n""")
+      self.cursor.execute(search_employer, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[2][1]
+        old_employer = result[2][0]
+        if old_employer == None:
+          print("Employer: N/A\n")
+        else:
+          print("Employer:", old_employer, "\n")
+        print("Enter Employer: ", end="")
+        employer = input()
+        if employer:
+          self.cursor.execute(update_employer, (employer, username, rowID))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Employer: N/A\n")
+        print("Enter Employer: ", end="")
+        employer = input()
+        if employer:
+          self.cursor.execute(insert_employer, (username, employer))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else: 
+          print("\nInvalid input. Please try again.")
+      self.employer3Menu.start()
+
+
+  def edit_exp_startDate(self, section):
+    username = self.user.userName
+    # start date queries
+    search_startDate = 'SELECT dateStarted, ROWID FROM experiences WHERE username = ?'
+    insert_startDate = 'INSERT INTO experiences (username, dateStarted) VALUES (?, ?)'
+    update_startDate = 'UPDATE experiences SET dateStarted = ? WHERE username = ? AND ROWID = ?'
+    # update profile 
+    update_profile = 'UPDATE accounts SET profile = True WHERE username = ?'
+    # format for date
+    date_format = '%Y-%m-%d'
+
+    if section == "start1":
+      print("""------------------\nEditing Start Date\n------------------\n""")
+      self.cursor.execute(search_startDate, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[0][1]
+        old_startDate = result[0][0]
+        if old_startDate == None:
+          print("Start Date: N/A\n")
+        else:
+          print("Start Date:", old_startDate, "\n")
+        print("Enter Start Date (YYYY-MM-DD): ", end="")
+        startDate = input()
+        # validate string format
+        if startDate:
+          try:
+            dateObject = datetime.datetime.strptime(startDate, date_format)
+            self.cursor.execute(update_startDate, (startDate, username, rowID))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+            self.cursor.execute(insert_startDate, (username, startDate))
+        else: 
+          print("\nIncorrect format. Please try again.")
+      else:
+        print("Start Date: N/A\n")
+        print("Enter Start Date (YYYY-MM-DD): ", end="")
+        startDate = input()
+        # validate string format
+        if startDate:
+          try:
+            dateObject = datetime.datetime.strptime(startDate, date_format)
+            self.cursor.execute(insert_startDate, (username, startDate))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+        else:
+          print("\nIncorrect format. Please try again.")
+      self.sDate1Menu.start()
+    elif section == "start2":
+      print("""------------------\nEditing Start Date\n------------------\n""")
+      self.cursor.execute(search_startDate, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[1][1]
+        old_startDate = result[1][0]
+        if old_startDate == None:
+          print("Start Date: N/A\n")
+        else:
+          print("Start Date:", old_startDate, "\n")
+        print("Enter Start Date (YYYY-MM-DD): ", end="")
+        startDate = input()
+        if startDate:
+          try:
+            dateObject = datetime.datetime.strptime(startDate, date_format)
+            self.cursor.execute(update_startDate, (startDate, username, rowID))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+            self.cursor.execute(insert_startDate, (username, startDate))
+        else: 
+          print("\nIncorrect format. Please try again.")
+      else:
+        print("Start Date: N/A\n")
+        print("Enter Start Date (YYYY-MM-DD): ", end="")
+        startDate = input()
+        # validate string format
+        if startDate:
+          try:
+            dateObject = datetime.datetime.strptime(startDate, date_format)
+            self.cursor.execute(insert_startDate, (username, startDate))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+        else:
+          print("\nIncorrect format. Please try again.")
+      self.sDate2Menu.start()
+    elif section == "start3":
+      print("""------------------\nEditing Start Date\n------------------\n""")
+      self.cursor.execute(search_startDate, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[2][1]
+        old_startDate = result[2][0]
+        if old_startDate == None:
+          print("Start Date: N/A\n")
+        else:
+          print("Start Date:", old_startDate, "\n")
+        print("Enter Start Date (YYYY-MM-DD): ", end="")
+        startDate = input()
+        if startDate:
+          try:
+            dateObject = datetime.datetime.strptime(startDate, date_format)
+            self.cursor.execute(update_startDate, (startDate, username, rowID))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+            self.cursor.execute(insert_startDate, (username, startDate))
+        else: 
+          print("\nIncorrect format. Please try again.")
+      else:
+        print("Start Date: N/A\n")
+        print("Enter Start Date (YYYY-MM-DD): ", end="")
+        startDate = input()
+        # validate string format
+        if startDate:
+          try:
+            dateObject = datetime.datetime.strptime(startDate, date_format)
+            self.cursor.execute(insert_startDate, (username, startDate))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+        else:
+          print("\nIncorrect format. Please try again.")
+      self.sDate3Menu.start()
+
+  def edit_exp_endDate(self, section):
+    username = self.user.userName
+    # end date queries
+    search_endDate = 'SELECT dateEnded, ROWID FROM experiences WHERE username = ?'
+    insert_endDate = 'INSERT INTO experiences (username, dateEnded) VALUES (?, ?)'
+    update_endDate = 'UPDATE experiences SET dateEnded = ? WHERE username = ? AND ROWID = ?'
+    # update profile 
+    update_profile = 'UPDATE accounts SET profile = True WHERE username = ?'
+    # format for date
+    date_format = '%Y-%m-%d'
+
+    if section == "end1":
+      print("""-----------------\nEditing End Date\n-----------------\n""")
+      self.cursor.execute(search_endDate, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[0][1]
+        old_endDate = result[0][0]
+        if old_endDate == None:
+          print("End Date: N/A\n")
+        else:
+          print("End Date:", old_endDate, "\n")
+        print("Enter End Date (YYYY-MM-DD): ", end="")
+        endDate = input()
+        # validate string format
+        if endDate:
+          try:
+            dateObject = datetime.datetime.strptime(endDate, date_format)
+            self.cursor.execute(update_endDate, (endDate, username, rowID))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+            self.cursor.execute(insert_endDate, (username, endDate))
+        else: 
+          print("\nIncorrect format. Please try again.")
+      else:
+        print("End Date: N/A\n")
+        print("Enter End Date (YYYY-MM-DD): ", end="")
+        endDate = input()
+        # validate string format
+        if endDate:
+          try:
+            dateObject = datetime.datetime.strptime(endDate, date_format)
+            self.cursor.execute(insert_endDate, (username, endDate))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+        else:
+          print("\nIncorrect format. Please try again.")
+      self.eDate1Menu.start()
+    elif section == "end2":
+      print("""-----------------\nEditing End Date\n-----------------\n""")
+      self.cursor.execute(search_endDate, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[1][1]
+        old_endDate = result[1][0]
+        if old_endDate == None:
+          print("End Date: N/A\n")
+        else:
+          print("End Date:", old_endDate, "\n")
+        print("Enter End Date (YYYY-MM-DD): ", end="")
+        endDate = input()
+        if endDate:
+          try:
+            dateObject = datetime.datetime.strptime(endDate, date_format)
+            self.cursor.execute(update_endDate, (endDate, username, rowID))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+            self.cursor.execute(insert_endDate, (username, endDate))
+        else: 
+          print("\nIncorrect format. Please try again.")
+      else:
+        print("End Date: N/A\n")
+        print("Enter End Date (YYYY-MM-DD): ", end="")
+        endDate = input()
+        # validate string format
+        if endDate:
+          try:
+            dateObject = datetime.datetime.strptime(endDate, date_format)
+            self.cursor.execute(insert_endDate, (username, endDate))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+        else:
+            print("\nIncorrect format. Please try again.")
+      self.eDate2Menu.start()
+    elif section == "end3":
+      print("""-----------------\nEditing End Date\n-----------------\n""")
+      self.cursor.execute(search_endDate, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result): 
+        rowID = result[2][1]
+        old_endDate = result[2][0]
+        if old_endDate == None:
+          print("End Date: N/A\n")
+        else:
+          print("End Date:", old_endDate, "\n")
+        print("Enter End Date (YYYY-MM-DD): ", end="")
+        endDate = input()
+        if endDate:
+          try:
+            dateObject = datetime.datetime.strptime(endDate, date_format)
+            self.cursor.execute(update_endDate, (endDate, username, rowID))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+            self.cursor.execute(insert_endDate, (username, endDate))
+        else: 
+          print("\nIncorrect format. Please try again.")
+      else:
+        print("End Date: N/A\n")
+        print("Enter End Date (YYYY-MM-DD): ", end="")
+        endDate = input()
+        # validate string format
+        if endDate:
+          try:
+            dateObject = datetime.datetime.strptime(endDate, date_format)
+            self.cursor.execute(insert_endDate, (username, endDate))
+            self.conn.commit()
+            self.cursor.execute(update_profile, (username,))
+            self.conn.commit()
+          except ValueError:
+            print("\nIncorrect format. Please try again.")
+        else:
+          print("\nIncorrect format. Please try again.")
+      self.eDate3Menu.start()
+
+
+  def edit_exp_location(self, section):
+    username = self.user.userName
+    # location queries
+    search_location = 'SELECT location, ROWID FROM experiences WHERE username = ?'
+    insert_location = 'INSERT INTO experiences (username, location) VALUES (?, ?)'
+    update_location = 'UPDATE experiences SET location = ? WHERE username = ? AND ROWID = ?'
+    # update profile 
+    update_profile = 'UPDATE accounts SET profile = True WHERE username = ?'
+
+    if section == "location1":
+      print("""--------------\nEditing Location\n--------------\n""")
+      self.cursor.execute(search_location, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if result: 
+        # get the rowID of first experience
+        rowID = result[0][1]
+        old_location = result[0][0]
+        if old_location == None:
+          print("Location: N/A\n")
+        else:
+          print("Location:", old_location, "\n")
+        # prompt user for input
+        print("Enter A Location: ", end="")
+        location = input()
+        # if valid input then update first exp in db
+        if location:
+          self.cursor.execute(update_location, (location, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Location: N/A\n")
+        print("Enter A Location: ", end="")
+        location = input()
+        if location:
+          self.cursor.execute(insert_location, (username, location))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      self.location1Menu.start()
+    elif section == "location2":
+      print("""--------------\nEditing Location\n--------------\n""")
+      self.cursor.execute(search_location, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result) > 1: 
+        # get the rowID of second experience
+        rowID = result[1][1]
+        old_location = result[1][0]
+        if old_location == None:
+          print("Location: N/A\n")
+        else:
+          print("Location:", old_location, "\n")
+        # prompt user for input
+        print("Enter A Location: ", end="")
+        location = input()
+        # if valid input then update second exp in db
+        if location:
+          self.cursor.execute(update_location, (location, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Location: N/A\n")
+        print("Enter A Location: ", end="")
+        location = input()
+        if location:
+          self.cursor.execute(insert_location, (username, location))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      self.location2Menu.start()
+    elif section == "location3":
+      print("""--------------\nEditing Location\n--------------\n""")
+      self.cursor.execute(search_location, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result) > 2: 
+        # get the rowID of third experience
+        rowID = result[2][1]
+        old_location = result[2][0]
+        if old_location == None:
+          print("Location: N/A\n")
+        else:
+          print("Location:", old_location, "\n")
+        # prompt user for input
+        print("Enter A Location: ", end="")
+        location = input()
+        # if valid input then update third exp in db
+        if location:
+          self.cursor.execute(update_location, (location, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Location: N/A\n")
+        print("Enter A Location: ", end="")
+        location = input()
+        if location:
+          self.cursor.execute(insert_location, (username, location))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      self.location3Menu.start()
+
+
+  def edit_exp_description(self, section):
+    username = self.user.userName
+    # description queries
+    search_description = 'SELECT description, ROWID FROM experiences WHERE username = ?'
+    insert_description = 'INSERT INTO experiences (username, description) VALUES (?, ?)'
+    update_description = 'UPDATE experiences SET description = ? WHERE username = ? AND ROWID = ?'
+    # update profile 
+    update_profile = 'UPDATE accounts SET profile = True WHERE username = ?'
+
+    if section == "description1":
+      print("""-------------------\nEditing Description\n-------------------\n""")
+      self.cursor.execute(search_description, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if result: 
+        # get the rowID of first experience
+        rowID = result[0][1]
+        old_description = result[0][0]
+        if old_description == None:
+          print("Description: N/A\n")
+        else:
+          print("Description:", old_description, "\n")
+        # prompt user for input
+        print("Enter A Description: ", end="")
+        description = input()
+        # if valid input then update first exp in db
+        if description:
+          self.cursor.execute(update_description, (description, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Description: N/A\n")
+        print("Enter A Description: ", end="")
+        description = input()
+        if description:
+          self.cursor.execute(insert_description, (username, description))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      self.description1Menu.start()
+    elif section == "description2":
+      print("""------------------\nEditing Description\n-------------------\n""")
+      self.cursor.execute(search_description, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result) > 1: 
+        # get the rowID of second experience
+        rowID = result[1][1]
+        old_description = result[1][0]
+        if old_description == None:
+          print("Description: N/A\n")
+        else:
+          print("Description:", old_description, "\n")
+        # prompt user for input
+        print("Enter A Description: ", end="")
+        description = input()
+        # if valid input then update second exp in db
+        if description:
+          self.cursor.execute(update_description, (description, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Desciption: N/A\n")
+        print("Enter A Desciption: ", end="")
+        description =description
+        if description:
+          self.cursor.execute(insert_description, (username, description))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      self.description2Menu.start()
+    elif section == "description3":
+      print("""-------------------\nEditing Desciption\n-------------------\n""")
+      self.cursor.execute(search_description, (username,))
+      result = self.cursor.fetchall()
+      # check if query isn't None
+      if len(result) > 2: 
+        # get the rowID of third experience
+        rowID = result[2][1]
+        old_description = result[2][0]
+        if old_description == None:
+          print("Description: N/A\n")
+        else:
+          print("Description:", old_description, "\n")
+        # prompt user for input
+        print("Enter A Description: ", end="")
+        description = input()
+        # if valid input then update third exp in db
+        if description:
+          self.cursor.execute(update_description, (description, username, rowID))
+          self.conn.commit()
+          # set profile to true in accounts table
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      else:
+        print("Description: N/A\n")
+        print("Enter A Description: ", end="")
+        description = input()
+        if description:
+          self.cursor.execute(insert_locdescription, (username, description))
+          self.conn.commit()
+          self.cursor.execute(update_profile, (username,))
+          self.conn.commit()
+        else:
+          print("\nInvalid input. Please try again.")
+      self.description3Menu.start()
+
+  
   def encryption(self, password):
     sha256 = hashlib.sha256()
     sha256.update(password.encode('utf-8'))
@@ -1242,7 +1957,9 @@ class System:
       print("Error: User not found.")
       self.user.profile = None
   
-   
+  
+    
+    
      
   ## Function for the important links to print
   content = {
