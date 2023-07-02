@@ -80,29 +80,29 @@ REGISTER_SUCCESS = "Account created successfully."
 #   system_instance.conn.commit()
 
 
-# tests the clear setup part of clear_restore_db
-def test_clear(system_instance, clear_restore_db):
-  # tables with FKs referencing other tables should come after the referenced table
-  tables = ['accounts', 'friends', 'experiences', 'jobs']
-  print()
-  for table in tables:
-    system_instance.cursor.execute(f"SELECT * FROM {table}")
-    result = system_instance.cursor.fetchall()
-    print(table + "============================")
-    for row in result:
-      print(row)
+# # tests the clear setup part of clear_restore_db
+# def test_clear(system_instance, clear_restore_db):
+#   # tables with FKs referencing other tables should come after the referenced table
+#   tables = ['accounts', 'friends', 'experiences', 'jobs']
+#   print()
+#   for table in tables:
+#     system_instance.cursor.execute(f"SELECT * FROM {table}")
+#     result = system_instance.cursor.fetchall()
+#     print(table + "============================")
+#     for row in result:
+#       print(row)
 
-# tests the teardown part of clear_restore_db
-def test_restore(system_instance):
-  # tables with FKs referencing other tables should come after the referenced table
-  tables = ['accounts', 'friends', 'experiences', 'jobs']
-  print()
-  for table in tables:
-    system_instance.cursor.execute(f"SELECT * FROM {table}")
-    result = system_instance.cursor.fetchall()
-    print(table + "============================")
-    for row in result:
-      print(row)
+# # tests the teardown part of clear_restore_db
+# def test_restore(system_instance):
+#   # tables with FKs referencing other tables should come after the referenced table
+#   tables = ['accounts', 'friends', 'experiences', 'jobs']
+#   print()
+#   for table in tables:
+#     system_instance.cursor.execute(f"SELECT * FROM {table}")
+#     result = system_instance.cursor.fetchall()
+#     print(table + "============================")
+#     for row in result:
+#       print(row)
 
 # PERSISTENT USERS + ASSOCIATED RECORDS ===============================================================
 
@@ -202,7 +202,6 @@ def test_experiences_FK(system_instance, clear_restore_db):
   system_instance.cursor.executemany(query, validUsers)
   system_instance.conn.commit()
   # insert same 2 test users into the experiences table
-  table = 'experiences'
   query = f"INSERT INTO {tables[1]} (username) VALUES (?)"
   print(query)
   system_instance.cursor.executemany(query, validUsers)
