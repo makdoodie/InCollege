@@ -487,7 +487,7 @@ class System:
   # view Profile adding into the friends connections if the frinds has a profile 
     self.displayFriendInfo.addItem("View Profile", 
                                    lambda: self.quick_menu(friend.displayProfile("full")), 
-                                   lambda: friend.checkProfile()is not None)
+                                   lambda: friend.checkProfile())
      # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", 
                                    lambda: self.disconnectFriend(friend), 
