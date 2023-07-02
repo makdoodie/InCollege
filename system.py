@@ -301,7 +301,7 @@ class System:
     self.receiveFriendReqMenu = Menu()
     self.networkMenu = Menu()
     self.displayFriendInfo = Menu()
-    self.friendProfileMenu = Menu()
+    self.viewFriendProfile = Menu()
     self.userProfileMenu = Menu()
     self.editProfileMenu = Menu()
     self.viewUserProfile = Menu()
@@ -479,14 +479,23 @@ class System:
     self.networkMenu.start()
   def display_friend_info(self):
     self.displayFriendInfo.start()
-    
+  
+
+  def view_friend_profile(self, friend):
+    self.loadFriendProfile(friend)
+    full_profile = friend.displayProfile("full")
+    partial_profile = friend.displayProfile("part")
+    self.viewFriendProfile.setOpening(lambda: full_profile if friend.checkProfile() and friend.userName in self.user.acceptedRequests else partial_profile)
+    self.viewFriendProfile.start()
+
   def display_network(self, friend):
     # create a dynamic opening
-    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}""")
-    # \nUsername: {friend.userName}\nUniversity: {friend.university}\nMajor: {friend.major}
-  # view Profile adding into the friends connections if the frinds has a profile 
+    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With "}{friend.fName.capitalize()} {friend.lName.capitalize()}""")
+   
+  # view Profile adding into the friends connections if the friend has a profile 
+
     self.displayFriendInfo.addItem("View Profile", 
-                                   lambda: self.quick_menu(friend.displayProfile("full")), 
+                                   lambda: self.view_friend_profile(friend), 
                                    lambda: friend.checkProfile())
      # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", 
@@ -506,7 +515,7 @@ class System:
     if connections:
       self.networkMenu.setOpening("Your Connections: ")    
       for uname, user in reversed(connections.items()):
-        full_name = f'{user.fName} {user.lName}'
+        full_name = f'{user.fName.capitalize()} {user.lName.capitalize()}'
         # create an option for each connection and
         # provide additional info when clicked on
         self.networkMenu.addItem(full_name, lambda usr=user: self.display_network(usr))
@@ -540,7 +549,7 @@ class System:
       self.userProfileMenu.addItem("View Profile", 
                                    lambda: self.view_user_profile, 
                                    lambda: self.user.checkProfile())
-      self.userProfileMenu.setExitStatement("Exit")
+      self.userProfileMenu.setExitStatement("Return to Main Menu")
     self.userProfileMenu.start()
 
   
@@ -1264,7 +1273,7 @@ class System:
     update_profile = 'UPDATE accounts SET profile = True WHERE username = ?'
 
     if section == "location1":
-      print("""--------------\nEditing Location\n--------------\n""")
+      print("""----------------\nEditing Location\n----------------\n""")
       self.cursor.execute(search_location, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
@@ -1301,7 +1310,7 @@ class System:
           print("\nInvalid input. Please try again.")
       self.location1Menu.start()
     elif section == "location2":
-      print("""--------------\nEditing Location\n--------------\n""")
+      print("""----------------\nEditing Location\n----------------\n""")
       self.cursor.execute(search_location, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
@@ -1338,7 +1347,7 @@ class System:
           print("\nInvalid input. Please try again.")
       self.location2Menu.start()
     elif section == "location3":
-      print("""--------------\nEditing Location\n--------------\n""")
+      print("""----------------\nEditing Location\n----------------\n""")
       self.cursor.execute(search_location, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
@@ -1489,7 +1498,7 @@ class System:
         print("Enter A Description: ", end="")
         description = input()
         if description:
-          self.cursor.execute(insert_locdescription, (username, description))
+          self.cursor.execute(insert_description, (username, description))
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
@@ -1769,7 +1778,7 @@ class System:
     Loads the current user's dictionary of friends that they have sent a pending friend request to.
     """
     query = """
-    SELECT username, fName, lName, university, major FROM accounts 
+    SELECT username, fName, lName FROM accounts 
     WHERE username IN (SELECT receiver FROM friends WHERE sender = ? AND status = ?)
     """
     params = (self.user.userName, 'pending')
@@ -1777,7 +1786,7 @@ class System:
     result = self.cursor.fetchall()
     # iterate over the results and create a dictionary mapping each username to an initialized user object
     self.user.sentRequests = {
-      uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
+      uName: User(uName, fName, lName) for uName, fName, lName in result
     }
 
   def loadReceivedFriends(self):
@@ -1785,7 +1794,7 @@ class System:
     Loads the current user's dictionary of friends that they have received a pending friend request from.
     """
     query = """
-    SELECT username, fName, lName, university, major FROM accounts 
+    SELECT username, fName, lName FROM accounts 
     WHERE username IN (SELECT sender FROM friends WHERE receiver = ? AND status = ?)
     """
     params = (self.user.userName, 'pending')
@@ -1793,7 +1802,7 @@ class System:
     result = self.cursor.fetchall()
     # iterate over the results and create a dictionary mapping each username to an initialized user object
     self.user.receivedRequests = {
-      uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
+      uName: User(uName, fName, lName) for uName, fName, lName in result
     }
     # return length of dictionary to determine if
     # pending request message and number is displayed
@@ -1804,7 +1813,7 @@ class System:
     Loads the current user's dictionary of friends that have the accepted status.
     """
     query = """
-    SELECT username, fName, lName, university, major FROM accounts WHERE username IN (
+    SELECT username, fName, lName, profile FROM accounts WHERE username IN (
       SELECT CASE WHEN sender = ? THEN receiver ELSE sender END AS friend 
       FROM friends WHERE ? in (sender, receiver) AND status = ?
       GROUP BY friend
@@ -1815,9 +1824,12 @@ class System:
     self.cursor.execute(query, params)
     result = self.cursor.fetchall()
     # iterate over the results and create a dictionary mapping each username to an initialized user object
-    self.user.acceptedRequests = {
-      uName: User(uName, fName, lName, university=uni, major=maj) for uName, fName, lName, uni, maj in result
-    }
+    self.user.acceptedRequests = {}
+    for uName, fName, lName, bprofile in result:
+      if bprofile:
+        self.user.acceptedRequests[uName] = User(uName, fName, lName, Profile=profile())
+      else:
+        self.user.acceptedRequests[uName] = User(uName, fName, lName) 
 
   def loadAllFriends(self):
     """
@@ -1970,6 +1982,52 @@ class System:
     else:
       print("Error: User not found.")
       self.user.profile = None
+
+
+  def loadFriendProfile(self, friend):
+    userName = friend.userName
+    query = "SELECT rowid FROM friends WHERE ? IN (sender, receiver) AND ? IN (sender, receiver) AND status = 'accepted'"
+    self.cursor.execute(query, (self.user.userName, friend.userName))
+    result = self.cursor.fetchone()
+    if result == None:
+      self.user.acceptedRequests.pop(userName, None)
+      print("Error: Not friends with this user")
+      return
+    
+    fields = """
+      university, major, yearsAttended, accounts.title AS headline, infoAbout, profile, expID, experiences.title AS title, employer, dateStarted, dateEnded, location, description
+      """
+    query = f"""
+      SELECT {fields} FROM accounts LEFT JOIN experiences ON accounts.username = experiences.username WHERE accounts.username = ?
+      """
+    self.cursor.execute(query, (userName,))
+    userProfile = self.cursor.fetchall()    
+    if len(userProfile):
+      if userProfile[0][5] == True:
+        userEducation = education(university=userProfile[0][0],
+                                  major=userProfile[0][1],
+                                  yearsAttended=userProfile[0][2])
+        # list comprehension to create exp as a list
+        experiences = [row[6:] for row in userProfile]
+        userExperiences = []
+        if not(len(experiences) == 1 and all(e is None for e in experiences)):
+          for exp in experiences:
+            userExperiences.append(experience(ID=exp[0],
+                                   title=exp[1],
+                                   employer=exp[2],
+                                   startDate=exp[3],
+                                   endDate=exp[4],
+                                   location=exp[5],
+                                   description=exp[6]))
+        friend.profile = profile(headline=userProfile[0][3],
+                                about=userProfile[0][4],
+                                education=userEducation,
+                                experiences=userExperiences)
+      else:
+        friend.profile = None
+    else:
+      print("Error: User not found.")
+      friend.profile = None
   
   
     
