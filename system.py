@@ -487,7 +487,7 @@ class System:
   # view Profile adding into the friends connections if the frinds has a profile 
     self.displayFriendInfo.addItem("View Profile", 
                                    lambda: self.quick_menu(friend.displayProfile("full")), 
-                                   lambda: friend.checkProfile()is not None)
+                                   lambda: friend.checkProfile())
      # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", 
                                    lambda: self.disconnectFriend(friend), 
@@ -520,7 +520,13 @@ class System:
     result = self.cursor.fetchone()
     # if true, create a dummy profile for the user
     if result[0]:
-      self.user.createdProfile = profile()
+      self.user.Profile = profile()
+
+  def view_user_profile(self):
+    if not self.viewUserProfile.hasBackgroundActions():
+      self.viewUserProfile.addBackgroundAction(self.loadUserProfile)
+    print(self.user.displayProfile("full"))
+    self.viewUserProfile.start()
   
   def user_profile_menu(self):
     if not self.userProfileMenu.hasBackgroundActions():
@@ -532,7 +538,7 @@ class System:
       # if the user created a profile (profile object in user class)
       self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
       self.userProfileMenu.addItem("View Profile", 
-                                   lambda: self.user.displayProfile("full"), 
+                                   lambda: self.view_user_profile, 
                                    lambda: self.user.checkProfile())
       self.userProfileMenu.setExitStatement("Exit")
     self.userProfileMenu.start()
@@ -657,6 +663,8 @@ class System:
         params = (headline, username)
         self.cursor.execute(headline_query, params)
         self.conn.commit()
+      else: 
+        print("\nInvalid input. Please try again.")
       self.titleMenu.start()
     elif section == "about":
       old_about = self.user.profile.about
@@ -672,6 +680,8 @@ class System:
         params = (about, username)
         self.cursor.execute(about_query, params)
         self.conn.commit()
+      else:
+        print("\nInvalid input. Please try again.")
       self.aboutMenu.start()
     elif section == "uni":
       old_uni = self.user.profile.education.university.title()
@@ -687,6 +697,8 @@ class System:
         params = (uni, username)
         self.cursor.execute(uni_query, params)
         self.conn.commit()
+      else:
+        print("\nInvalid input. Please try again.")
       self.uniMenu.start()
     elif section == "deg":
       old_degree = self.user.profile.education.major.title()
@@ -702,6 +714,8 @@ class System:
         params = (degree, username)
         self.cursor.execute(degree_query, params)
         self.conn.commit()
+      else:
+        print("\nInvalid input. Please try again.")
       self.degreeMenu.start()
     elif section == "years":
       old_years = self.user.profile.education.yearsAttended
