@@ -663,6 +663,8 @@ class System:
         params = (headline, username)
         self.cursor.execute(headline_query, params)
         self.conn.commit()
+      else: 
+        print("\nInvalid input. Please try again.")
       self.titleMenu.start()
     elif section == "about":
       old_about = self.user.profile.about
@@ -678,6 +680,8 @@ class System:
         params = (about, username)
         self.cursor.execute(about_query, params)
         self.conn.commit()
+      else:
+        print("\nInvalid input. Please try again.")
       self.aboutMenu.start()
     elif section == "uni":
       old_uni = self.user.profile.education.university.title()
@@ -693,6 +697,8 @@ class System:
         params = (uni, username)
         self.cursor.execute(uni_query, params)
         self.conn.commit()
+      else:
+        print("\nInvalid input. Please try again.")
       self.uniMenu.start()
     elif section == "deg":
       old_degree = self.user.profile.education.major.title()
@@ -708,6 +714,8 @@ class System:
         params = (degree, username)
         self.cursor.execute(degree_query, params)
         self.conn.commit()
+      else:
+        print("\nInvalid input. Please try again.")
       self.degreeMenu.start()
     elif section == "years":
       old_years = self.user.profile.education.yearsAttended
