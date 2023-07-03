@@ -44,7 +44,7 @@ class User:
   
     
   # check if profile has been created
-  def checkProfile(self):
+  def hasProfile(self):
     return self.Profile is not None
 
   def displayProfile(self, mode):
@@ -54,7 +54,7 @@ class User:
         profileString = "---------------\nViewing Profile\n---------------\n\n"
         profileString += f"Name: {firstName} {lastName}\n"
         
-        if self.Profile:
+        if self.hasProfile():
             headline = self.Profile.headline
             about = self.Profile.about
             university = self.Profile.education.university.title()
@@ -64,13 +64,14 @@ class User:
             profileString += f"Title: {headline if headline else 'N/A'}\n"
             profileString += f"About: {about if about else 'N/A'}\n\n"
             # education section
-            profileString += "Education\n..........\n\n"
-            profileString += f" University: {university}\n"
-            profileString += f" Degree: {major if major else 'N/A'}\n"
-            profileString += f" Years Attended: {yearsAttended if yearsAttended else 'N/A'}\n"
+            if self.Profile.education:
+              profileString += "Education\n..........\n\n"
+              profileString += f" University: {university}\n"
+              profileString += f" Degree: {major if major else 'N/A'}\n"
+              profileString += f" Years Attended: {yearsAttended if yearsAttended else 'N/A'}\n"
             # experiences section 
             if self.Profile.experiences:
-                for i, experience in enumerate(self.Profile.experiences, start=1):
+                for i, experience in enumerate(self.Profile.experiences, start = 1):
                     title = experience.title if experience.title else 'N/A'
                     employer = experience.employer if experience.employer else 'N/A'
                     startDate = experience.startDate if experience.startDate else 'N/A'

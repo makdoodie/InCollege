@@ -485,7 +485,7 @@ class System:
     self.loadFriendProfile(friend)
     full_profile = friend.displayProfile("full")
     partial_profile = friend.displayProfile("part")
-    self.viewFriendProfile.setOpening(lambda: full_profile if friend.checkProfile() and friend.userName in self.user.acceptedRequests else partial_profile)
+    self.viewFriendProfile.setOpening(lambda: full_profile if friend.hasProfile() and friend.userName in self.user.acceptedRequests else partial_profile)
     self.viewFriendProfile.start()
 
   def display_network(self, friend):
@@ -496,7 +496,7 @@ class System:
 
     self.displayFriendInfo.addItem("View Profile", 
                                    lambda: self.view_friend_profile(friend), 
-                                   lambda: friend.checkProfile())
+                                   lambda: friend.hasProfile())
      # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", 
                                    lambda: self.disconnectFriend(friend), 
@@ -545,10 +545,10 @@ class System:
     if len(self.userProfileMenu.selections) == 0:
       # create a dynamic option based on
       # if the user created a profile
-      self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
+      self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.hasProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
       self.userProfileMenu.addItem("View Profile", 
                                    lambda: self.view_user_profile, 
-                                   lambda: self.user.checkProfile())
+                                   lambda: self.user.hasProfile())
       self.userProfileMenu.setExitStatement("Return to Main Menu")
     self.userProfileMenu.start()
 
@@ -562,22 +562,22 @@ class System:
     if len(self.editProfileMenu.selections) == 0:
       self.editProfileMenu.addItem("Title", 
                                    lambda: self.edit_section("head"), 
-                                   lambda: self.user.checkProfile)
+                                   lambda: self.user.hasProfile)
       self.editProfileMenu.addItem("About", 
                                    lambda: self.edit_section("about"), 
-                                   lambda: self.user.checkProfile)
+                                   lambda: self.user.hasProfile)
       self.editProfileMenu.addItem("Education", 
                                    lambda: self.education_menu, 
-                                   lambda: self.user.checkProfile)
+                                   lambda: self.user.hasProfile)
       self.editProfileMenu.addItem("Experience 1", 
                                    lambda: self.experience1_menu, 
-                                   lambda: self.user.checkProfile)
+                                   lambda: self.user.hasProfile)
       self.editProfileMenu.addItem("Experience 2", 
                                    lambda: self.experience2_menu, 
-                                   lambda: self.user.checkProfile)
+                                   lambda: self.user.hasProfile)
       self.editProfileMenu.addItem("Experience 3",
                                    lambda: self.experience3_menu, 
-                                   lambda: self.user.checkProfile)
+                                   lambda: self.user.hasProfile)
     self.editProfileMenu.start()
 
   def education_menu(self):
@@ -882,7 +882,7 @@ class System:
       self.cursor.execute(search_employer, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if result: 
         rowID = result[0][1]
         old_employer = result[0][0]
         if old_employer == None:
@@ -915,7 +915,7 @@ class System:
       self.cursor.execute(search_employer, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if len(result) > 1: 
         rowID = result[1][1]
         old_employer = result[1][0]
         if old_employer == None:
@@ -948,7 +948,7 @@ class System:
       self.cursor.execute(search_employer, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if len(result) > 2: 
         rowID = result[2][1]
         old_employer = result[2][0]
         if old_employer == None:
@@ -994,7 +994,7 @@ class System:
       self.cursor.execute(search_startDate, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if result: 
         rowID = result[0][1]
         old_startDate = result[0][0]
         if old_startDate == None:
@@ -1007,13 +1007,13 @@ class System:
         if startDate:
           try:
             dateObject = datetime.datetime.strptime(startDate, date_format)
-            self.cursor.execute(update_startDate, (startDate, username, rowID))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(update_startDate, (startDate, username, rowID))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
-            self.cursor.execute(insert_startDate, (username, startDate))
         else: 
           print("\nIncorrect format. Please try again.")
       else:
@@ -1024,10 +1024,11 @@ class System:
         if startDate:
           try:
             dateObject = datetime.datetime.strptime(startDate, date_format)
-            self.cursor.execute(insert_startDate, (username, startDate))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(insert_startDate, (username, startDate))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1038,7 +1039,7 @@ class System:
       self.cursor.execute(search_startDate, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if len(result) > 1: 
         rowID = result[1][1]
         old_startDate = result[1][0]
         if old_startDate == None:
@@ -1050,13 +1051,13 @@ class System:
         if startDate:
           try:
             dateObject = datetime.datetime.strptime(startDate, date_format)
-            self.cursor.execute(update_startDate, (startDate, username, rowID))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(update_startDate, (startDate, username, rowID))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
-            self.cursor.execute(insert_startDate, (username, startDate))
         else: 
           print("\nIncorrect format. Please try again.")
       else:
@@ -1067,10 +1068,11 @@ class System:
         if startDate:
           try:
             dateObject = datetime.datetime.strptime(startDate, date_format)
-            self.cursor.execute(insert_startDate, (username, startDate))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(insert_startDate, (username, startDate))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1081,7 +1083,7 @@ class System:
       self.cursor.execute(search_startDate, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if len(result) > 2: 
         rowID = result[2][1]
         old_startDate = result[2][0]
         if old_startDate == None:
@@ -1093,13 +1095,13 @@ class System:
         if startDate:
           try:
             dateObject = datetime.datetime.strptime(startDate, date_format)
-            self.cursor.execute(update_startDate, (startDate, username, rowID))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(update_startDate, (startDate, username, rowID))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
-            self.cursor.execute(insert_startDate, (username, startDate))
         else: 
           print("\nIncorrect format. Please try again.")
       else:
@@ -1110,10 +1112,11 @@ class System:
         if startDate:
           try:
             dateObject = datetime.datetime.strptime(startDate, date_format)
-            self.cursor.execute(insert_startDate, (username, startDate))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(insert_startDate, (username, startDate))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1136,7 +1139,7 @@ class System:
       self.cursor.execute(search_endDate, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if result: 
         rowID = result[0][1]
         old_endDate = result[0][0]
         if old_endDate == None:
@@ -1149,13 +1152,13 @@ class System:
         if endDate:
           try:
             dateObject = datetime.datetime.strptime(endDate, date_format)
-            self.cursor.execute(update_endDate, (endDate, username, rowID))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(update_endDate, (endDate, username, rowID))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
-            self.cursor.execute(insert_endDate, (username, endDate))
         else: 
           print("\nIncorrect format. Please try again.")
       else:
@@ -1166,10 +1169,11 @@ class System:
         if endDate:
           try:
             dateObject = datetime.datetime.strptime(endDate, date_format)
-            self.cursor.execute(insert_endDate, (username, endDate))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(insert_endDate, (username, endDate))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1180,7 +1184,7 @@ class System:
       self.cursor.execute(search_endDate, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if len(result) > 1: 
         rowID = result[1][1]
         old_endDate = result[1][0]
         if old_endDate == None:
@@ -1192,13 +1196,13 @@ class System:
         if endDate:
           try:
             dateObject = datetime.datetime.strptime(endDate, date_format)
-            self.cursor.execute(update_endDate, (endDate, username, rowID))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(update_endDate, (endDate, username, rowID))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
-            self.cursor.execute(insert_endDate, (username, endDate))
         else: 
           print("\nIncorrect format. Please try again.")
       else:
@@ -1209,10 +1213,11 @@ class System:
         if endDate:
           try:
             dateObject = datetime.datetime.strptime(endDate, date_format)
-            self.cursor.execute(insert_endDate, (username, endDate))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(insert_endDate, (username, endDate))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1223,7 +1228,7 @@ class System:
       self.cursor.execute(search_endDate, (username,))
       result = self.cursor.fetchall()
       # check if query isn't None
-      if len(result): 
+      if len(result) > 2: 
         rowID = result[2][1]
         old_endDate = result[2][0]
         if old_endDate == None:
@@ -1235,13 +1240,13 @@ class System:
         if endDate:
           try:
             dateObject = datetime.datetime.strptime(endDate, date_format)
-            self.cursor.execute(update_endDate, (endDate, username, rowID))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(update_endDate, (endDate, username, rowID))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
-            self.cursor.execute(insert_endDate, (username, endDate))
         else: 
           print("\nIncorrect format. Please try again.")
       else:
@@ -1252,10 +1257,11 @@ class System:
         if endDate:
           try:
             dateObject = datetime.datetime.strptime(endDate, date_format)
-            self.cursor.execute(insert_endDate, (username, endDate))
-            self.conn.commit()
-            self.cursor.execute(update_profile, (username,))
-            self.conn.commit()
+            if dateObject:
+              self.cursor.execute(insert_endDate, (username, endDate))
+              self.conn.commit()
+              self.cursor.execute(update_profile, (username,))
+              self.conn.commit()
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1652,7 +1658,7 @@ class System:
     ## Validate Inputs
     if self.validatePassword(password,passwordCheck) and self.validateUserName(username) and self.validName(fName,lName):
       encrypted_pass = self.encryption(password)
-      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName,university,major) VALUES (?, ?, ?, ?, ?, ?)", (username, encrypted_pass,fName,lName,university,major))
+      self.cursor.execute("INSERT INTO accounts (username, password,fName,lName,university,major,profile) VALUES (?, ?, ?, ?, ?, ?, ?)", (username, encrypted_pass,fName,lName,university,major,False))
       self.conn.commit() #saving new account to database
       print("Account created successfully.")
       return self.login
@@ -1966,7 +1972,7 @@ class System:
       # list comprehension to create exp as a list
       experiences = [row[6:] for row in userProfile]
       userExperiences = []
-      if not(len(experiences) == 1 and all(e is None for e in experiences)):
+      if not(len(experiences) == 1 and experiences[0][0] is None):
         for exp in experiences:
           userExperiences.append(experience(ID=exp[0],
                                  title=exp[1],
@@ -2194,7 +2200,6 @@ In College Pressroom: Stay on top of the latest news, updates, and reports
       self.videoMenu.setOpening("See Our Success Story:\n(Playing Video)\n")
       ## Set Main Menu Items
       self.mainMenu.addBackgroundAction(self.show_pending_message)
-      self.mainMenu.addBackgroundAction(self.loadUserProfile)
       self.mainMenu.addItem('Profile', self.user_profile_menu)
       self.mainMenu.addItem('Job/Internship Search', self.jobs_menu)
       # Find a Friend in mainMenu now Friends
