@@ -51,43 +51,45 @@ class User:
     firstName = self.fName.capitalize()
     lastName = self.lName.capitalize()
     if mode == "full":
-      headline = self.profile.headline
-      about = self.profile.about
-      university = self.profile.education.university.title()
-      major = self.profile.education.major.title()
-      yearsAttended = self.profile.education.yearsAttended
-      # experience 1 fields
-      exp_title1 = self.profile.experiences[0].title
-      exp_employer1 = self.profile.experiences[0].employer
-      exp_startDate1 = self.profile.experiences[0].startDate
-      exp_endDate1 = self.profile.experiences[0].endDate
-      exp_location1 = self.profile.experiences[0].location
-      exp_description1 = self.profile.experiences[0].description
-      # experience 2 fields
-      if len(self.profile.experiences) == 2 or len(self.profile.experiences) == 3:
-        exp_title2 = self.profile.experiences[1].title
-        exp_employer2 = self.profile.experiences[1].employer
-        exp_startDate2 = self.profile.experiences[1].startDate
-        exp_endDate2 = self.profile.experiences[1].endDate
-        exp_location2 = self.profile.experiences[1].location
-        exp_description2 = self.profile.experiences[1].description
-      # experience 3 fields
-      if len(self.profile.experiences) == 3:
-        exp_title3 = self.profile.experiences[2].title
-        exp_employer3 = self.profile.experiences[2].employer
-        exp_startDate3 = self.profile.experiences[2].startDate
-        exp_endDate3 = self.profile.experiences[2].endDate
-        exp_location3 = self.profile.experiences[2].location
-        exp_description3 = self.profile.experiences[2].description
-      if self.Profile:
-        if len(self.profile.experiences) == 1:
-          return f"---------------\nViewing Profile\n---------------\n\nName: {firstName} {lastName}\nTitle: {headline if headline else 'N/A'}\nAbout: {about if about else 'N/A'}\n\nEducation\n..........\n\n University: {university}\n Degree: {major if major else 'N/A'}\n Years Attended: {yearsAttended if yearsAttended else 'N/A'}\n\nExperience 1\n.............\n\n Title: {exp_title1 if exp_title1 else 'N/A'}\n Employer: {exp_employer1 if exp_employer1 else 'N/A'}\n Start Date: {exp_startDate1 if exp_startDate1 else 'N/A'}\n End Date: {exp_endDate1 if exp_endDate1 else 'N/A'}\n Location: {exp_location1 if exp_location1 else 'N/A'}\n Description: {exp_description1 if exp_description1 else 'N/A'}"
-        elif len(self.profile.experiences) == 2:
-          return f"---------------\nViewing Profile\n---------------\n\nName: {firstName} {lastName}\nTitle: {headline if headline else 'N/A'}\nAbout: {about if about else 'N/A'}\n\nEducation\n..........\n\n University: {university}\n Degree: {major if major else 'N/A'}\n Years Attended: {yearsAttended if yearsAttended else 'N/A'}\n\nExperience 1\n.............\n\n Title: {exp_title1 if exp_title1 else 'N/A'}\n Employer:{exp_employer1 if exp_employer1 else 'N/A'}\n Start Date: {exp_startDate1 if exp_startDate1 else 'N/A'}\n End Date: {exp_endDate1 if exp_endDate1 else 'N/A'}\n Location: {exp_location1 if exp_location1 else 'N/A'}\n Description: {exp_description1 if exp_description1 else 'N/A'}\n\nExperience 2\n.............\n\n Title: {exp_title2 if exp_title2 else 'N/A'}\n Employer: {exp_employer2 if exp_employer2 else 'N/A'}\n Start Date: {exp_startDate2 if exp_startDate2 else 'N/A'}\n End Date: {exp_endDate2 if exp_endDate2 else 'N/A'}\n Location: {exp_location2 if exp_location2 else 'N/A'}\n Description: {exp_description2 if exp_description2 else 'N/A'}"
-        elif len(self.profile.experiences) == 3:
-          return f"---------------\nViewing Profile\n---------------\n\nName: {firstName} {lastName}\nTitle: {headline if headline else 'N/A'}\nAbout: {about if about else 'N/A'}\n\nEducation\n..........\n\n University: {university}\n Degree: {major if major else 'N/A'}\n Years Attended: {yearsAttended if yearsAttended else 'N/A'}\n\nExperience 1\n.............\n\n Title: {exp_title1 if exp_title1 else 'N/A'}\n Employer: {exp_employer1 if exp_employer1 else 'N/A'}\n Start Date: {exp_startDate1 if exp_startDate1 else 'N/A'}\n End Date: {exp_endDate1 if exp_endDate1 else 'N/A'}\n Location: {exp_location1 if exp_location1 else 'N/A'}\n Description: {exp_description1 if exp_description1 else 'N/A'}\n\nExperience 2\n.............\n\n Title: {exp_title2 if exp_title2 else 'N/A'}\n Employer: {exp_employer2 if exp_employer2 else 'N/A'}\n Start Date: {exp_startDate2 if exp_startDate2 else 'N/A'}\n End Date: {exp_endDate2 if exp_endDate2 else 'N/A'}\n Location: {exp_location2 if exp_location2 else 'N/A'}\n Description: {exp_description2 if exp_description2 else 'N/A'}\n\nExperience 3\n.............\n\n Title: {exp_title3 if exp_title3 else 'N/A'}\n Employer: {exp_employer3 if exp_employer3 else 'N/A'}\n Start Date: {exp_startDate3 if exp_startDate3 else 'N/A'}\n End Date: {exp_endDate3 if exp_endDate3 else 'N/A'}\n Location: {exp_location3 if exp_location3 else 'N/A'}\n Description: {exp_description3 if exp_description3 else 'N/A'}"
+        profileString = "---------------\nViewing Profile\n---------------\n\n"
+        profileString += f"Name: {firstName} {lastName}\n"
+        
+        if self.Profile:
+            headline = self.Profile.headline
+            about = self.Profile.about
+            university = self.Profile.education.university.title()
+            major = self.Profile.education.major.title()
+            yearsAttended = self.Profile.education.yearsAttended
+
+            profileString += f"Title: {headline if headline else 'N/A'}\n"
+            profileString += f"About: {about if about else 'N/A'}\n\n"
+            # education section
+            profileString += "Education\n..........\n\n"
+            profileString += f" University: {university}\n"
+            profileString += f" Degree: {major if major else 'N/A'}\n"
+            profileString += f" Years Attended: {yearsAttended if yearsAttended else 'N/A'}\n"
+            # experiences section 
+            if self.Profile.experiences:
+                for i, experience in enumerate(self.Profile.experiences, start=1):
+                    title = experience.title if experience.title else 'N/A'
+                    employer = experience.employer if experience.employer else 'N/A'
+                    startDate = experience.startDate if experience.startDate else 'N/A'
+                    endDate = experience.endDate if experience.endDate else 'N/A'
+                    location = experience.location if experience.location else 'N/A'
+                    description = experience.description if experience.description else 'N/A'
+                    profileString += f"\nExperience {i}\n"
+                    profileString += ".............\n\n"
+                    profileString += f" Title: {title}\n"
+                    profileString += f" Employer: {employer}\n"
+                    profileString += f" Start Date: {startDate}\n"
+                    profileString += f" End Date: {endDate}\n"
+                    profileString += f" Location: {location}\n"
+                    profileString += f" Description: {description}\n\n"
+        return profileString
+
     elif mode == "part":
-      return f"Name: {firstName} {lastName}"
+        return f"Name: {firstName} {lastName}"
+
 
 class profile:
   def __init__(self, headline=None, about=None, education=None, experiences=None):

@@ -490,7 +490,7 @@ class System:
 
   def display_network(self, friend):
     # create a dynamic opening
-    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With "}{friend.fName.capitalize()} {friend.lName.capitalize()}""")
+    self.displayFriendInfo.setOpening(lambda: f"""Additional Friend Information: \n\n{friend.displayProfile("part")}\n\n{"You Have Disconnected From This User" if friend.userName not in self.user.acceptedRequests else "You Are Friends With This User"}""")
    
   # view Profile adding into the friends connections if the friend has a profile 
 
@@ -534,7 +534,7 @@ class System:
   def view_user_profile(self):
     if not self.viewUserProfile.hasBackgroundActions():
       self.viewUserProfile.addBackgroundAction(self.loadUserProfile)
-    print(self.user.displayProfile("full"))
+    self.viewUserProfile.setOpening(lambda: self.user.displayProfile("full"))
     self.viewUserProfile.start()
   
   def user_profile_menu(self):
@@ -544,7 +544,7 @@ class System:
       self.userProfileMenu.setOpening("Welcome to the Profile Menu")
     if len(self.userProfileMenu.selections) == 0:
       # create a dynamic option based on
-      # if the user created a profile (profile object in user class)
+      # if the user created a profile
       self.userProfileMenu.addItem(lambda: f"""{"Create Profile" if self.user.checkProfile() == False else "Edit Profile"}""", lambda: self.edit_profile_menu)
       self.userProfileMenu.addItem("View Profile", 
                                    lambda: self.view_user_profile, 
@@ -659,7 +659,7 @@ class System:
     username = self.user.userName
     # edit profile title and update db
     if section == "head":
-      old_headline = self.user.profile.headline
+      old_headline = self.user.Profile.headline
       print("""--------------\nEditing Title\n--------------\n""")
       if old_headline == None:
         print("Title: N/A\n")
@@ -676,7 +676,7 @@ class System:
         print("\nInvalid input. Please try again.")
       self.titleMenu.start()
     elif section == "about":
-      old_about = self.user.profile.about
+      old_about = self.user.Profile.about
       print("""--------------\nEditing About\n--------------\n""")
       if old_about == None:
         print("About: N/A\n")
@@ -693,7 +693,7 @@ class System:
         print("\nInvalid input. Please try again.")
       self.aboutMenu.start()
     elif section == "uni":
-      old_uni = self.user.profile.education.university.title()
+      old_uni = self.user.Profile.education.university.title()
       print("""------------------\nEditing University\n------------------\n""")
       if old_uni == None: 
         print("University: N/A\n")
@@ -710,7 +710,7 @@ class System:
         print("\nInvalid input. Please try again.")
       self.uniMenu.start()
     elif section == "deg":
-      old_degree = self.user.profile.education.major.title()
+      old_degree = self.user.Profile.education.major.title()
       print("""--------------\nEditing Degree\n--------------\n""")
       if old_degree == None:
         print("Degree: N/A\n")
@@ -727,7 +727,7 @@ class System:
         print("\nInvalid input. Please try again.")
       self.degreeMenu.start()
     elif section == "years":
-      old_years = self.user.profile.education.yearsAttended
+      old_years = self.user.Profile.education.yearsAttended
       print("""--------------\nEditing Years\n--------------\n""")
       if old_years == None:
         print("Years Attended: N/A\n")
@@ -1975,13 +1975,13 @@ class System:
                                  endDate=exp[4],
                                  location=exp[5],
                                  description=exp[6]))
-      self.user.profile = profile(headline=userProfile[0][3],
+      self.user.Profile = profile(headline=userProfile[0][3],
                                   about=userProfile[0][4],
                                   education=userEducation,
                                   experiences=userExperiences)
     else:
       print("Error: User not found.")
-      self.user.profile = None
+      self.user.Profile = None
 
 
   def loadFriendProfile(self, friend):
@@ -2019,15 +2019,15 @@ class System:
                                    endDate=exp[4],
                                    location=exp[5],
                                    description=exp[6]))
-        friend.profile = profile(headline=userProfile[0][3],
+        friend.Profile = profile(headline=userProfile[0][3],
                                 about=userProfile[0][4],
                                 education=userEducation,
                                 experiences=userExperiences)
       else:
-        friend.profile = None
+        friend.Profile = None
     else:
       print("Error: User not found.")
-      friend.profile = None
+      friend.Profile = None
   
   
     
