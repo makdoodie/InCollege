@@ -1,9 +1,15 @@
 import pytest
 import string
 import random
-from unittest import mock
-from system import System
 import sqlite3
+import os
+from unittest import mock
+from system import System, Menu, Jobs
+from user import User
+
+# from unittest.mock import Mock
+# from unittest.mock import patch
+# from system import Menu, Jobs, System
 
 @pytest.fixture #creates instance of System and calls Main Menu
 def system_instance():
@@ -13,29 +19,61 @@ def system_instance():
 
 @pytest.fixture #removes existing accounts from db while testing
 def temp_remove_accounts(system_instance): 
-  system_instance.cursor.execute("SELECT * FROM accounts")
-  saved_accounts = system_instance.cursor.fetchall()
-  if len(saved_accounts) > 0:
+  """Sets up the database for testing by saving and clearing any persistent records, 
+  after a test finishes test records are cleared and saved records are restored."""
+  data = {}
+  # tables with FKs referencing other tables should come after the referenced table
+  tables = ['accounts', 'friends', 'experiences', 'jobs']
+  # store each of the tables into a dictionary
+  for table in tables:
+    system_instance.cursor.execute(f"SELECT * FROM {table}")
+    data[table] = system_instance.cursor.fetchall()
+
+  # delete all records from the the accounts table, 
+  # and should auto delete all records from tables with FK to accounts
+  if len(data[tables[0]]):
     system_instance.cursor.execute("DELETE FROM accounts")
     system_instance.conn.commit()
+  # delete all records from the jobs table
+  if len(data[tables[-1]]):
+    system_instance.cursor.execute("DELETE FROM jobs")
+  system_instance.conn.commit()
+    
   yield
+  # delete any testing records from the database 
   system_instance.cursor.execute("DELETE FROM accounts")
-  if len(saved_accounts) > 0:
-    system_instance.cursor.executemany(
-      "INSERT INTO accounts (username, password, fName, lName, university, major) VALUES (?, ?, ?, ?, ?, ?)",
-      saved_accounts)
+  system_instance.cursor.execute("DELETE FROM jobs")
+  # restore saved records to all tables 
+  for table in tables:
+    if len(data[table]):
+      # add a ? to the list of parameters for each column in the table
+      parameters = f"({','.join('?' for col in data[table][0])})"
+      query = f"INSERT INTO {table} VALUES {parameters}"
+      system_instance.cursor.executemany(query, data[table])
   system_instance.conn.commit()
 
-@pytest.fixture #Creates an account to test with in the database
+# @pytest.fixture #Creates an account to test with in the database
+# def name_register(system_instance, temp_remove_accounts, capsys):
+#   inputs = ['2', 'ahmad', 'ah', 'mad','university of south florida','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+#   with mock.patch('builtins.input', side_effect=inputs):
+#     system_instance.home_page()
+#   captured = capsys.readouterr()
+#   output = captured.out
+#   assert  'Account created successfully.' in output
+  
+#   yield
+
+
+@pytest.fixture #test that user can input first and last name when registering
 def name_register(system_instance, temp_remove_accounts, capsys):
-  inputs = ['2', 'ahmad', 'ah', 'mad','university of south florida','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+  inputs = ['2', 'ahmad', 'ah', 'mad', 'usf', 'cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out
-  assert  'Account created successfully.' in output
-  
+  assert 'Account created successfully.' in output
   yield
+  
 
 @pytest.fixture #Creates a second account to test with in the database
 def name_register_1(system_instance, temp_remove_accounts, capsys):
@@ -61,130 +99,6 @@ def three_users(system_instance, temp_remove_accounts, capsys):
     output = captured.out
     assert  'Account created successfully.' in output  
   yield
-
-# generates a random string based on the provided parameters
-def generate_random_string(length, num_upper, num_digits, num_special):
-  special = '!@#$%^&*()_+-=[]{}|;:,.<>/?`~\'\"\\'
-  selected_chars = []
-  # exception sum of number of uppercase, digits, and specials must not exceed string length
-  if length < (num_upper + num_digits + num_special):
-    raise Exception(
-      "Total number of uppercase, digits, and special characters exceeds length."
-    )
-  # add special characters
-  for i in range(num_special):
-    selected_chars.append(random.choice(special))
-  # add digits
-  for i in range(num_digits):
-    selected_chars.append(random.choice(string.digits))
-  # add uppercase letter
-  for i in range(num_upper):
-    selected_chars.append(random.choice(string.ascii_uppercase))
-  # add remaining lowercase letters
-  length = length - num_digits - num_special - num_upper
-  for i in range(length):
-    selected_chars.append(random.choice(string.ascii_lowercase))
-  # shuffle password and return as string
-  random.shuffle(selected_chars)
-  return ''.join(selected_chars)
-
-@pytest.fixture #test that user can input first and last name when registering
-def name_register(system_instance, temp_remove_accounts, capsys):
-  inputs = ['2', 'ahmad', 'ah', 'mad', 'usf', 'cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
-  with mock.patch('builtins.input', side_effect=inputs):
-    system_instance.home_page()
-  captured = capsys.readouterr()
-  output = captured.out
-  assert 'Account created successfully.' in output
-  yield
-
-def test_register_success(system_instance, capfd, temp_remove_accounts):
-  system_instance.initMenu()
-  account_limit = 10
-  msg_max_accounts = "Maximum Number Of Accounts Created!"
-  msg_reg_success = "Account created successfully."
-  # register max number of accounts
-  temp_accounts = []
-  for i in range(account_limit):
-    length = random.randint(5, 25)
-    username = generate_random_string(length, 1, 1, 0)
-    length = random.randint(8, 12)
-    password = generate_random_string(length, 1, 1, 1)
-    fName = generate_random_string(8, 1, 0, 0)
-    lName = generate_random_string(8, 1, 0, 0)
-    university = 'usf'
-    major = 'cs'
-    # simulate 5 users creating an account
-    with mock.patch('builtins.input', side_effect=['2', username, fName, lName,university,major,password, password, username, password, '0', '0']):
-      system_instance.home_page()
-    std = capfd.readouterr()
-    assert msg_reg_success in std.out.strip()
-    password = system_instance.encryption(password)
-    temp_accounts.append((username, password))
-  # account limit reached, registering next account must fail
-  length = random.randint(5, 25)
-  username = generate_random_string(length, 1, 1, 0)
-  length = random.randint(8, 12)
-  password = generate_random_string(length, 1, 1, 1)
-  fName = generate_random_string(8, 1, 0, 0)
-  lName = generate_random_string(8, 1, 0, 0)
-  # simulate 11th user creating an account 
-  with mock.patch('builtins.input', side_effect=['2', username, fName, lName, university, major, password, password, username, password, '0', '0']):
-      system_instance.home_page() 
-  std = capfd.readouterr()
-  user_query = "SELECT * FROM accounts WHERE (username, password) = (?, ?)"
-  system_instance.cursor.execute(
-    user_query, (username, system_instance.encryption(password)))
-  account = system_instance.cursor.fetchone()
-  assert msg_max_accounts in std.out.strip() and account is None
-
-def test_findfriend(system_instance, capsys, name_register): #tests that show my network is an option
-  inputs = ['2', 'james', 'sm', 'ith', 'usf', 'cs', 'Jsmith1!', 'Jsmith1!', 'james', 'Jsmith1!', '2', '0', '0', '0']
-  with mock.patch('builtins.input', side_effect=inputs):
-    system_instance.home_page()
-  captured = capsys.readouterr()
-  output = captured.out
-  assert '[2] Show My Network' in output
-
-def test_network(system_instance, capsys, name_register): #tests that the first and last name is displayed in show my network for all friends of the user, then connects with a friend and checks that once disconnected with that same friend, the former friend does not appear in show my network
-  inputs = ['2', 'james', 'sm', 'ith', 'usf', 'cs', 'Jsmith1!', 'Jsmith1!', 'james', 'Jsmith1!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '1', 'ahmad', 'Asibai1$', '2', '3', '1', '1', '0', '0', '2', '1', '1', '0', '0', '0', '0', '0']
-  with mock.patch('builtins.input', side_effect=inputs):
-    system_instance.home_page()
-  captured = capsys.readouterr()
-  output = captured.out
-  assert '[1] sm ith' in output
-  assert 'Name: sm ith\nUsername: james\nUniversity: usf\nMajor: cs\n\n[1] Disconnect' in output
-  assert 'You Have Disconnected From This User' in output
-  assert 'You Have No Connections.' in output
-import pytest
-import os
-import sqlite3
-from user import User
-from unittest import mock
-from unittest.mock import Mock
-from unittest.mock import patch
-from system import Menu, Jobs, System
-
-@pytest.fixture #creates instance of System and calls Main Menu
-def system_instance():
-  s1 = System()
-  s1.initMenu()
-  return s1
-
-@pytest.fixture #removes existing accounts from db while testing
-def temp_remove_accounts(system_instance): 
-  system_instance.cursor.execute("SELECT * FROM accounts")
-  saved_accounts = system_instance.cursor.fetchall()
-  if len(saved_accounts) > 0:
-    system_instance.cursor.execute("DELETE FROM accounts")
-    system_instance.conn.commit()
-  yield
-  system_instance.cursor.execute("DELETE FROM accounts")
-  if len(saved_accounts) > 0:
-    system_instance.cursor.executemany(
-      "INSERT INTO accounts (username, password, fName, lName,university,major) VALUES (?, ?, ?, ?,?,?)",
-      saved_accounts)
-  system_instance.conn.commit()
 
 @pytest.fixture
 def test_instance_1():
@@ -226,16 +140,91 @@ def test_instance_1():
     # Return the system instance for the test
     return system
 
-@pytest.fixture #test that user can input first and last name when registering
-def name_register(system_instance, temp_remove_accounts, capsys):
-  inputs = ['2', 'ahmad', 'ah', 'mad','usf','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
+# generates a random string based on the provided parameters
+def generate_random_string(length, num_upper, num_digits, num_special):
+  special = '!@#$%^&*()_+-=[]{}|;:,.<>/?`~\'\"\\'
+  selected_chars = []
+  # exception sum of number of uppercase, digits, and specials must not exceed string length
+  if length < (num_upper + num_digits + num_special):
+    raise Exception(
+      "Total number of uppercase, digits, and special characters exceeds length."
+    )
+  # add special characters
+  for i in range(num_special):
+    selected_chars.append(random.choice(special))
+  # add digits
+  for i in range(num_digits):
+    selected_chars.append(random.choice(string.digits))
+  # add uppercase letter
+  for i in range(num_upper):
+    selected_chars.append(random.choice(string.ascii_uppercase))
+  # add remaining lowercase letters
+  length = length - num_digits - num_special - num_upper
+  for i in range(length):
+    selected_chars.append(random.choice(string.ascii_lowercase))
+  # shuffle password and return as string
+  random.shuffle(selected_chars)
+  return ''.join(selected_chars)
+
+
+def test_register_success(system_instance, capfd, temp_remove_accounts):
+  account_limit = 10
+  msg_max_accounts = "Maximum Number Of Accounts Created!"
+  msg_reg_success = "Account created successfully."
+  # register max number of accounts
+  temp_accounts = []
+  for i in range(account_limit):
+    length = random.randint(5, 25)
+    username = generate_random_string(length, 1, 1, 0)
+    length = random.randint(8, 12)
+    password = generate_random_string(length, 1, 1, 1)
+    fName = generate_random_string(8, 1, 0, 0)
+    lName = generate_random_string(8, 1, 0, 0)
+    university = 'usf'
+    major = 'cs'
+    # simulate each test user creating an account
+    with mock.patch('builtins.input', side_effect=['2', username, fName, lName,university,major,password, password, username, password, '0', '0']):
+      system_instance.home_page()
+    std = capfd.readouterr()
+    assert msg_reg_success in std.out.strip()
+    password = system_instance.encryption(password)
+    temp_accounts.append((username, password))
+  # account limit reached, registering next account must fail
+  length = random.randint(5, 25)
+  username = generate_random_string(length, 1, 1, 0)
+  length = random.randint(8, 12)
+  password = generate_random_string(length, 1, 1, 1)
+  fName = generate_random_string(8, 1, 0, 0)
+  lName = generate_random_string(8, 1, 0, 0)
+  # simulate 11th user creating an account 
+  with mock.patch('builtins.input', side_effect=['2', username, fName, lName, university, major, password, password, username, password, '0', '0']):
+      system_instance.home_page() 
+  std = capfd.readouterr()
+  user_query = "SELECT * FROM accounts WHERE (username, password) = (?, ?)"
+  system_instance.cursor.execute(
+    user_query, (username, system_instance.encryption(password)))
+  account = system_instance.cursor.fetchone()
+  assert msg_max_accounts in std.out.strip() and account is None
+
+def test_findfriend(system_instance, capsys, name_register): #tests that show my network is an option
+  inputs = ['2', 'james', 'sm', 'ith', 'usf', 'cs', 'Jsmith1!', 'Jsmith1!', 'james', 'Jsmith1!', '3', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out
-  assert  'Account created successfully.' in output
-  
-  yield
+  assert '[2] Show My Network' in output
+
+def test_network(system_instance, capsys, name_register): #tests that the first and last name is displayed in show my network for all friends of the user, then connects with a friend and checks that once disconnected with that same friend, the former friend does not appear in show my network
+  inputs = ['2', 'james', 'sm', 'ith', 'usf', 'cs', 'Jsmith1!', 'Jsmith1!', 'james', 'Jsmith1!', '3', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '1', 'ahmad', 'Asibai1$', '3', '3', '1', '1', '0', '0', '2', '1', '1', '0', '0', '0', '0', '0']
+  with mock.patch('builtins.input', side_effect=inputs):
+    system_instance.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert '[1] sm ith' in output
+  assert 'Name: Sm Ith\n\nYou Are Friends With This User\n\n[1] Disconnect' in output
+  assert 'You Have Disconnected From This User' in output
+  assert 'You Have No Connections.' in output
+
 
 def test_not_loggedin(system_instance, temp_remove_accounts, capsys): #tests that signing up from the general option in useful links can only be accessed when a user is not logged in
   input = ['5', '1', '0', '0', '0']
@@ -246,7 +235,7 @@ def test_not_loggedin(system_instance, temp_remove_accounts, capsys): #tests tha
   assert '[1] Sign Up' in output
 
 def test_loggedin(system_instance, name_register, capsys):  #tests that signing up is not an option from the general option in useful links to logged in users
-  input = ['1', 'ahmad', 'Asibai1$', '4', '1', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '5', '1', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -342,7 +331,7 @@ def test_guestnotloggedin(system_instance, temp_remove_accounts, capsys): #tests
   assert output[47] == '[0] Exit'
 
 def test_guestloggedin(system_instance, name_register, capsys):  #tests that guest controls can be accessed when a user is logged in
-  input = ['1', 'ahmad', 'Asibai1$', '5', '5', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '6', '5', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -350,7 +339,7 @@ def test_guestloggedin(system_instance, name_register, capsys):  #tests that gue
   assert '[1] Guest Controls' in output
 
 def test_controlsoff(system_instance, name_register, capsys):  #tests that guest controls are all off
-  input = ['1', 'ahmad', 'Asibai1$', '5', '5', '1', '1', '2', '3', '0', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '6', '5', '1', '1', '2', '3', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -425,10 +414,7 @@ Welcome to the Important Links Page
   assert expected_message in output
 
 
-
 # #Task 1:Add a "Copyright Notice" link and have it contain relevant content
-
-
 def test_copyRightNoticelink(capsys, ):
   system_instance = System()
   # Call the initMenu method to initialize the menu
@@ -478,8 +464,6 @@ By accessing and using the InCollege website, you agree to comply with all appli
 
 
 # #Task 2:Add an "About" link and have it contain a history of the company and why it was created.
-
-
 def test_aboutLink(capsys):
   system_instance = System()
   # Call the initMenu method to initialize the menu
@@ -580,7 +564,6 @@ By continuing to use our app, you acknowledge that you have read and agreed to t
 
 
 #Task 4:Add a "Privacy Policy" link and have it contain relevant content
-
 def test_privacyPolicy(capsys):
   system_instance = System()
   # Call the initMenu method to initialize the menu
@@ -592,6 +575,7 @@ def test_privacyPolicy(capsys):
     (item for item in menu_items if item['label'] == 'Privacy Policy'), None)
   # Assert that the option exists
   assert inCollege_links_option is not None
+  
 # this test will test the content  inside the privacy policy 
 def test_privacyPolicyContent(capsys, monkeypatch):
   # Go to the "InCollege Important Links" menu
@@ -627,7 +611,6 @@ At InCollege, we value your privacy and are committed to protecting your persona
 
 
 # #Task5:Add a "Cookie Policy" link and have it contain relevant content
-
 def test_cookiePolicy(capsys):
   system_instance = System()
   # Call the initMenu method to initialize the menu
@@ -690,7 +673,6 @@ def test_PrivacyPolicyGuestControls(capsys):
   assert expected_message in output
 
 # check the guess control link
-
 def test_GuestControlslink(capsys):
   system = System()
   system.initMenu()
@@ -712,7 +694,6 @@ def test_GuestControlslink(capsys):
   assert expected_message in output
 
 # #Task7:Add a "Brand Policy" link and have it contain relevant content
-
 def test_brandPolicy(capsys):
   system_instance = System()
   # Call the initMenu method to initialize the menu
@@ -726,7 +707,6 @@ def test_brandPolicy(capsys):
   assert inCollege_links_option is not None
 
 # test the content for the brand policy option 
-
 def test_brandPolicyContent(capsys, monkeypatch):
   # Go to the "InCollege Important Links" menu
   system = System()
@@ -756,6 +736,7 @@ Any unauthorized usage of the InCollege brand assets is strictly prohibited.
 ------------------------
 '''
   assert expected_message in output
+  
 # Accessibility link option 
 def test_Accessibility(capsys):
   system_instance = System()
@@ -818,7 +799,6 @@ def test_languageLink(capsys):
 # #story: As a signed in user, I want to be able to switch the language
 
 # #Task 1:Add an option to switch to Spanish
-
 def test_languageSpanish(capsys):
   system = System()
   system.initMenu()
@@ -849,6 +829,7 @@ def test_slanguageEnglish(capsys):
 
   # check that english option is available and turned on by default
   assert "English [X]" in captured.out
+  
 # check the option to switch to Spanish 
 def test_switchToSpanish(capsys):
   system = System()
@@ -862,6 +843,7 @@ def test_switchToSpanish(capsys):
 
   # check that spanish option is available and turn on 
   assert "Spanish [X]" in captured.out
+  
 # check the option to switch to English
 def test_switchToEnglish(capsys):
   system = System()
@@ -998,6 +980,7 @@ def test_menu_class_additions(test_instance_1):
   assert hasattr(test_instance_1.sendFriendRequestMenu,"backgroundActions")
   assert hasattr(test_instance_1.homePage,"backgroundActions")
   assert hasattr(test_instance_1.mainMenu,"backgroundActions")
+
 def test_friend_search_University(test_instance_1):
   field = "university"
   value = "USF"
@@ -1170,8 +1153,8 @@ def test_accounts_table_creation_withFields(system_instance, name_register):
         'university',
         'major'
     ]
-    # Assert that the column names match the expected column names
-    assert column_names == expected_columns
+    # refactored: accounts table now contains additional columns so assert expected columns are a subset of actual
+    assert expected_columns <= column_names
 
 #Subtask 2: Add a deletion trigger on the account table to remove associated records from an accounts table when an account is deleted
 
@@ -1229,8 +1212,9 @@ def test_unique_requests(system_instance, temp_remove_accounts, capsys, name_reg
 
 #Subtask 1: To notify the user of pending/received friend requests
 #Tests the notification system on the main menu once a user signs in
-def test_signup1(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1): 
-  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+# renamed from test_signup1 to avoid duplicate function names
+def test_pending_friend_notification(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1): 
+  input = ['1', 'makdoodie', 'Test123!', '3', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   input = ['1', 'ahmad', 'Asibai1$', '0', '0']
@@ -1242,13 +1226,13 @@ def test_signup1(system_instance, temp_remove_accounts, capsys, name_register ,n
   
 #Subtask 2: Add a friend’s option to the main menu
 #Test the friend's option shows up
-def test_freind_option(system_instance, capsys, name_register):
+def test_friend_option(system_instance, capsys, name_register):
   inputs = ['1', 'ahmad', 'Asibai1$', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out
-  assert '[2] Friends' in output
+  assert '[3] Friends' in output
 
 #Subtask 3: Move the find a friend option from the main menu to the friends menu
 #Test the friend's option shows up
@@ -1262,7 +1246,7 @@ def test_find_friends_moved(system_instance, capsys, name_register):
 
 #Test the friend's option shows up
 def test_find_friends(system_instance, capsys, name_register):
-  inputs = ['1', 'ahmad', 'Asibai1$', '2', '0', '0', '0']
+  inputs = ['1', 'ahmad', 'Asibai1$', '3', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -1273,10 +1257,10 @@ def test_find_friends(system_instance, capsys, name_register):
 
 #Subask 1: Add a 'pending requests' option to the friends menu that displays the first & last names from the user's received friend list
 def test_pending(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1): 
-  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  input = ['1', 'makdoodie', 'Test123!', '3', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
-  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '3', '3', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -1286,33 +1270,26 @@ def test_pending(system_instance, temp_remove_accounts, capsys, name_register ,n
   
 #Subask 2: Clicking on a request should allow the user to view the other users information and accept or reject the request.
 def test_accept_choice(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1): 
-  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  input = ['1', 'makdoodie', 'Test123!', '3', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
-  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '0', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '3', '3', '1', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  #nakes sure the name, university, and major are displayed
-  for line in output[156:161]:
-    if "Name" in line:
-        found_name = True
-    if "University" in line:
-        found_uni = True
-    if "Major" in line:
-        found_major = True
-  assert found_name and found_uni and found_major
-  #make sure accept and reject options are present
-  assert output[164] == '[1] Accept'
-  assert output[165] == '[2] Reject'
+  #make sure the senders name, and accept and reject options are present
+  assert output[151] == "Name: Mahmood Sales"
+  assert output[153].strip() == "You Have Received a Friend Request From This User."
+  assert output[155] == '[1] Accept'
+  assert output[156] == '[2] Reject'
 
 #Subtask 3: If the user accepts the request, the user object and the friends table should be updated to reflect the accepted friend status.
 def test_accepted(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
-  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  input = ['1', 'makdoodie', 'Test123!', '3', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
-  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '1', '0', '0', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '3', '3', '1', '1', '0', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   sender = "makdoodie"
@@ -1330,10 +1307,10 @@ def test_accepted(system_instance, temp_remove_accounts, capsys, name_register ,
 
 #Subtask 4: If the user rejects the request, the friend record should be removed from the user class and friends table in the database.
 def test_rejected(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
-  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  input = ['1', 'makdoodie', 'Test123!', '3', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
-  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '2', '0', '0', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '3', '3', '1', '2', '0', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   sender = "makdoodie"
@@ -1350,19 +1327,21 @@ def test_rejected(system_instance, temp_remove_accounts, capsys, name_register ,
 
 #Subtask 5: After an accept/reject, the friend should not appear in 'pending requests'.
 def test_pending_gone(system_instance, temp_remove_accounts, capsys, name_register ,name_register_1):
-  input = ['1', 'makdoodie', 'Test123!', '2', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
+  input = ['1', 'makdoodie', 'Test123!', '3', '1', '1', 'mad', '1', '1', '0', '0', '0', '0', '0', '0',]
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
-  input = ['1', 'ahmad', 'Asibai1$', '2', '3', '1', '1', '0', '0', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '3', '3', '1', '1', '0', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split("\n")
+  for i,line in enumerate(output):
+    print(i,line)
   #Makes sure the pending requests menu now says 0 
-  assert output[177] == 'You Have Received Friend Requests From 0 Users.'
+  assert output[164] == 'You Have Received Friend Requests From 0 Users.'
   #Makes sure the user's name is not still in the pending request menu
   request_pending = False
-  for line in output[177:181]:
+  for line in output[164:168]:
     if "[1] mahmood sales" in line:
         request_pending = True
   # Assert that request_pending is False, indicating no pending request
