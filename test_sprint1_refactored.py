@@ -11,22 +11,39 @@ def system_instance():
   return System()
 
 # setup and teardown style method that
-# temporarily removes existing accounts from DB when testing
+# temporarily removes existing accounts and associated records from DB when testing
 @pytest.fixture
 def temp_remove_accounts(system_instance):
-  # save and remove all existing accounts
-  system_instance.cursor.execute("SELECT * FROM accounts")
-  saved_accounts = system_instance.cursor.fetchall()
-  if len(saved_accounts) > 0:
+  """Sets up the database for testing by saving and clearing any persistent records, 
+  after a test finishes test records are cleared and saved records are restored."""
+  data = {}
+  # tables with FKs referencing other tables should come after the referenced table
+  tables = ['accounts', 'friends', 'experiences', 'jobs']
+  # store each of the tables into a dictionary
+  for table in tables:
+    system_instance.cursor.execute(f"SELECT * FROM {table}")
+    data[table] = system_instance.cursor.fetchall()
+
+  # delete all records from the the accounts table, 
+  # and should auto delete all records from tables with FK to accounts
+  if len(data[tables[0]]):
     system_instance.cursor.execute("DELETE FROM accounts")
     system_instance.conn.commit()
+  # delete all records from the jobs table
+  if len(data[tables[-1]]):
+    system_instance.cursor.execute("DELETE FROM jobs")
+  system_instance.conn.commit()
+    
   yield
-  # remove any test accounts and restore saved accounts
+  # delete any testing records from the database 
   system_instance.cursor.execute("DELETE FROM accounts")
-  if len(saved_accounts) > 0:
-    system_instance.cursor.executemany(
-      "INSERT INTO accounts (username, password, fName, lName,university,major) VALUES (?, ?, ?, ?,?,?)",
-      saved_accounts)
+  # restore saved records to all tables 
+  for table in tables:
+    if len(data[table]):
+      # add a ? to the list of parameters for each column in the table
+      parameters = f"({','.join('?' for col in data[table][0])})"
+      query = f"INSERT INTO {table} VALUES {parameters}"
+      system_instance.cursor.executemany(query, data[table])
   system_instance.conn.commit()
 
 @pytest.fixture #test that user can input first and last name when registering
@@ -123,7 +140,7 @@ def test_menu(system_instance, capsys):
 # all these functions are under contructions
 # search for a job or internship
 def test_job_search_under_construction(system_instance, name_register, capsys):
-  input = ['1', 'ahmad', 'Asibai1$', '1', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '2', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -132,12 +149,12 @@ def test_job_search_under_construction(system_instance, name_register, capsys):
 
 #find someone the user knows friend
 def test_find_friend_under_construction(system_instance, name_register, capsys):
-  input = ['1', 'ahmad', 'Asibai1$', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '3', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert '[2] Friends' in output
+  assert '[1] Find A Friend' in output
 
 def test_skill_option(system_instance, name_register, capsys):
   input = ['1', 'ahmad', 'Asibai1$', '0', '0']
@@ -145,11 +162,11 @@ def test_skill_option(system_instance, name_register, capsys):
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
-  assert '[3] Learn A Skill' in output
+  assert '[4] Learn A Skill' in output
 
 
 def test_numOfSkills(system_instance, name_register, capsys):
-  input = ['1', 'ahmad', 'Asibai1$', '3', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '4', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -594,7 +611,7 @@ def test_login_menu_register(system_instance, temp_remove_accounts,capsys):
 # allowing users to return to the main/top level menu
 def test_return_option(system_instance, capfd):
   exit_opt = "[0] Log Out\n"
-  main_menu_opts = ['Job/Internship Search', 'Friends', 'Learn A Skill', 'Useful Links', 'InCollege Important Links']
+  main_menu_opts = ['Profile', 'Job/Internship Search', 'Friends', 'Learn A Skill', 'Useful Links', 'InCollege Important Links']
   skills = ['Project Management', 'Networking', 'System Design', 'Coding', 'Professional Communication']
   # construct options for main and skill menus
   skill_choices = [
@@ -608,7 +625,7 @@ def test_return_option(system_instance, capfd):
   skill_prompt = ''.join(skill_choices)
   
   # simulated inputs: learn a skill, return to main menu, exit app
-  inputs = ['3', '0', '0']
+  inputs = ['4', '0', '0']
 
   # run the main menu with the simulated inputs
   with mock.patch('builtins.input', side_effect=inputs):
