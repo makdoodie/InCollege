@@ -37,6 +37,7 @@ def temp_remove_accounts(system_instance):
   yield
   # delete any testing records from the database 
   system_instance.cursor.execute("DELETE FROM accounts")
+  system_instance.cursor.execute("DELETE FROM jobs")
   # restore saved records to all tables 
   for table in tables:
     if len(data[table]):
