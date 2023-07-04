@@ -7,10 +7,6 @@ from unittest import mock
 from system import System, Menu, Jobs
 from user import User
 
-# from unittest.mock import Mock
-# from unittest.mock import patch
-# from system import Menu, Jobs, System
-
 @pytest.fixture #creates instance of System and calls Main Menu
 def system_instance():
   s1 = System()
@@ -51,17 +47,6 @@ def temp_remove_accounts(system_instance):
       query = f"INSERT INTO {table} VALUES {parameters}"
       system_instance.cursor.executemany(query, data[table])
   system_instance.conn.commit()
-
-# @pytest.fixture #Creates an account to test with in the database
-# def name_register(system_instance, temp_remove_accounts, capsys):
-#   inputs = ['2', 'ahmad', 'ah', 'mad','university of south florida','cs', 'Asibai1$', 'Asibai1$', 'ahmad', 'Asibai1$', '0', '0']
-#   with mock.patch('builtins.input', side_effect=inputs):
-#     system_instance.home_page()
-#   captured = capsys.readouterr()
-#   output = captured.out
-#   assert  'Account created successfully.' in output
-  
-#   yield
 
 
 @pytest.fixture #test that user can input first and last name when registering
