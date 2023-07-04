@@ -1501,9 +1501,9 @@ class System:
         else:
           print("\nInvalid input. Please try again.")
       else:
-        print("Desciption: N/A\n")
+        print("Description: N/A\n")
         print("Enter A Desciption: ", end="")
-        description =description
+        description = input()
         if description:
           self.cursor.execute(insert_description, (username, description))
           self.conn.commit()
