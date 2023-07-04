@@ -86,7 +86,7 @@ def three_users(system_instance, temp_remove_accounts, capsys):
   yield
 
 @pytest.fixture
-def test_instance_1():
+def test_instance_1(temp_remove_accounts):
   # Create an instance of the System class or initialize your system
   # delete the value of the table job to do the test 
     conn = sqlite3.connect("accounts.db")

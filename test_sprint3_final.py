@@ -49,7 +49,7 @@ def temp_remove_accounts(system_instance):
 
 
 @pytest.fixture
-def account_settings():
+def account_settings(temp_remove_accounts):
     # Create an instance of the System class or initialize your system
   # delete the value of the table job to do the test 
     conn = sqlite3.connect("accounts.db")
