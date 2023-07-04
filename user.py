@@ -57,14 +57,14 @@ class User:
         if self.hasProfile():
             headline = self.Profile.headline
             about = self.Profile.about
-            university = self.Profile.education.university.title()
-            major = self.Profile.education.major.title()
-            yearsAttended = self.Profile.education.yearsAttended
 
             profileString += f"Title: {headline if headline else 'N/A'}\n"
             profileString += f"About: {about if about else 'N/A'}\n\n"
             # education section
             if self.Profile.education:
+              university = self.Profile.education.university.title()
+              major = self.Profile.education.major.title()
+              yearsAttended = self.Profile.education.yearsAttended
               profileString += "Education\n..........\n\n"
               profileString += f" University: {university}\n"
               profileString += f" Degree: {major if major else 'N/A'}\n"
