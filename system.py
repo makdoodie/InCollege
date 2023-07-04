@@ -672,6 +672,7 @@ class System:
         params = (headline, username)
         self.cursor.execute(headline_query, params)
         self.conn.commit()
+        print("\nSuccessfully Added Title to Profile")
       else: 
         print("\nInvalid input. Please try again.")
       self.titleMenu.start()
@@ -689,6 +690,7 @@ class System:
         params = (about, username)
         self.cursor.execute(about_query, params)
         self.conn.commit()
+        print("\nSuccessfully Added About to Profile")
       else:
         print("\nInvalid input. Please try again.")
       self.aboutMenu.start()
@@ -706,6 +708,7 @@ class System:
         params = (uni, username)
         self.cursor.execute(uni_query, params)
         self.conn.commit()
+        print("\nSuccessfully Added University to Profile")
       else:
         print("\nInvalid input. Please try again.")
       self.uniMenu.start()
@@ -723,6 +726,7 @@ class System:
         params = (degree, username)
         self.cursor.execute(degree_query, params)
         self.conn.commit()
+        print("\nSuccessfully Added Degree to Profile")
       else:
         print("\nInvalid input. Please try again.")
       self.degreeMenu.start()
@@ -740,6 +744,7 @@ class System:
         params = (years, username)
         self.cursor.execute(years_query, params)
         self.conn.commit()
+        print("\nSuccessfully Added Years Attended to Profile")
       else: 
         print("\n\nError: Input not a number")
       self.yearsMenu.start()
@@ -777,6 +782,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Title to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -788,6 +794,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Title to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.title1Menu.start()
@@ -815,6 +822,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Title to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -826,6 +834,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Title to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.title2Menu.start()
@@ -852,6 +861,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Title to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -863,6 +873,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Title to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.title3Menu.start()
@@ -896,6 +907,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Employer to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -907,6 +919,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Employer to Profile")
         else: 
           print("\nInvalid input. Please try again.")
       self.employer1Menu.start()
@@ -929,6 +942,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Employer to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -940,6 +954,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Employer to Profile")
         else: 
           print("\nInvalid input. Please try again.")
       self.employer2Menu.start()
@@ -962,6 +977,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Employer to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -973,6 +989,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Employer to Profile")
         else: 
           print("\nInvalid input. Please try again.")
       self.employer3Menu.start()
@@ -1012,6 +1029,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added Start Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else: 
@@ -1029,6 +1047,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added Start Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1056,6 +1075,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added Start Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else: 
@@ -1073,6 +1093,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added Start Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1100,6 +1121,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added Start Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else: 
@@ -1117,6 +1139,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added Start Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1157,6 +1180,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added End Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else: 
@@ -1174,6 +1198,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added End Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1201,6 +1226,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added End Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else: 
@@ -1218,6 +1244,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added End Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1245,6 +1272,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added End Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else: 
@@ -1262,6 +1290,7 @@ class System:
               self.conn.commit()
               self.cursor.execute(update_profile, (username,))
               self.conn.commit()
+              print("\nSuccessfully Added End Date to Profile")
           except ValueError:
             print("\nIncorrect format. Please try again.")
         else:
@@ -1301,6 +1330,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Location to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -1312,6 +1342,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Location to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.location1Menu.start()
@@ -1338,6 +1369,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Location to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -1349,6 +1381,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Location to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.location2Menu.start()
@@ -1375,6 +1408,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Location to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -1386,6 +1420,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Location to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.location3Menu.start()
@@ -1423,6 +1458,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Description to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -1434,6 +1470,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Description to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.description1Menu.start()
@@ -1460,6 +1497,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Description to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -1471,6 +1509,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Description to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.description2Menu.start()
@@ -1497,6 +1536,7 @@ class System:
           # set profile to true in accounts table
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Description to Profile")
         else:
           print("\nInvalid input. Please try again.")
       else:
@@ -1508,6 +1548,7 @@ class System:
           self.conn.commit()
           self.cursor.execute(update_profile, (username,))
           self.conn.commit()
+          print("\nSuccessfully Added Description to Profile")
         else:
           print("\nInvalid input. Please try again.")
       self.description3Menu.start()
