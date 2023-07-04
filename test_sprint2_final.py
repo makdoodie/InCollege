@@ -15,17 +15,36 @@ def system_instance():
 
 @pytest.fixture #removes existing accounts from db while testing
 def temp_remove_accounts(system_instance): 
-  system_instance.cursor.execute("SELECT * FROM accounts")
-  saved_accounts = system_instance.cursor.fetchall()
-  if len(saved_accounts) > 0:
+  """Sets up the database for testing by saving and clearing any persistent records, 
+  after a test finishes test records are cleared and saved records are restored."""
+  data = {}
+  # tables with FKs referencing other tables should come after the referenced table
+  tables = ['accounts', 'friends', 'experiences', 'jobs']
+  # store each of the tables into a dictionary
+  for table in tables:
+    system_instance.cursor.execute(f"SELECT * FROM {table}")
+    data[table] = system_instance.cursor.fetchall()
+
+  # delete all records from the the accounts table, 
+  # and should auto delete all records from tables with FK to accounts
+  if len(data[tables[0]]):
     system_instance.cursor.execute("DELETE FROM accounts")
     system_instance.conn.commit()
+  # delete all records from the jobs table
+  if len(data[tables[-1]]):
+    system_instance.cursor.execute("DELETE FROM jobs")
+  system_instance.conn.commit()
+    
   yield
+  # delete any testing records from the database 
   system_instance.cursor.execute("DELETE FROM accounts")
-  if len(saved_accounts) > 0:
-    system_instance.cursor.executemany(
-      "INSERT INTO accounts (username, password, fName, lName,university,major) VALUES (?, ?, ?, ?,?,?)",
-      saved_accounts)
+  # restore saved records to all tables 
+  for table in tables:
+    if len(data[table]):
+      # add a ? to the list of parameters for each column in the table
+      parameters = f"({','.join('?' for col in data[table][0])})"
+      query = f"INSERT INTO {table} VALUES {parameters}"
+      system_instance.cursor.executemany(query, data[table])
   system_instance.conn.commit()
 
 
@@ -230,7 +249,7 @@ def test_register(system_instance, capsys, temp_remove_accounts):
     """
  
 def test_login(system_instance, capsys, name_register):
-  inputs = ['1', 'tester', 'Testing3!', '1', '0', '2', '0', '3', '0', '0', '0']
+  inputs = ['1', 'tester', 'Testing3!', '2', '0', '2', '0', '4', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -240,29 +259,29 @@ def test_login(system_instance, capsys, name_register):
   assert 'Enter Password: ' in output
   assert 'You Have Successfully Logged In!' in output
   assert 'Welcome User!' in output
-  assert '[1] Job/Internship Search' in output
-  assert '[2] Friends' in output
-  assert '[3] Learn A Skill' in output
-  assert '[4] Useful Links' in output
-  assert '[5] InCollege Important Links' in output
+  assert '[2] Job/Internship Search' in output
+  assert '[3] Friends' in output
+  assert '[4] Learn A Skill' in output
+  assert '[5] Useful Links' in output
+  assert '[6] InCollege Important Links' in output
   assert  '[0] Log Out' in output
   assert 'Welcome to the Job Postings Page' in output
   assert  '[1] Post Job' in output
   assert  '[0] Return To Main Menu' in output
   assert  'Welcome User!' in output
-  assert  '[1] Job/Internship Search' in output
-  assert '[2] Friends' in output
-  assert '[3] Learn A Skill' in output
-  assert  '[4] Useful Links' in output
-  assert '[5] InCollege Important Links' in output
+  assert  '[2] Job/Internship Search' in output
+  assert '[3] Friends' in output
+  assert '[4] Learn A Skill' in output
+  assert  '[5] Useful Links' in output
+  assert '[6] InCollege Important Links' in output
   assert '[0] Log Out' in output
   assert '[0] Exit' in output
   assert 'Welcome User!' in output
-  assert '[1] Job/Internship Search' in output
-  assert '[2] Friends' in output
-  assert '[3] Learn A Skill' in output
-  assert '[4] Useful Links' in output
-  assert '[5] InCollege Important Links' in output
+  assert '[2] Job/Internship Search' in output
+  assert '[3] Friends' in output
+  assert '[4] Learn A Skill' in output
+  assert '[5] Useful Links' in output
+  assert '[6] InCollege Important Links' in output
   assert '[0] Log Out' in output
   assert 'Please Select a Skill:' in output
   assert '[1] Project Management' in output
@@ -481,7 +500,7 @@ def test_addPostJobOption(system_instance, capsys):
   system_instance.initMenu()
 
   # simulate user picking the job psoting option
-  with mock.patch('builtins.input', side_effect=['1', '0', '0', '0']):
+  with mock.patch('builtins.input', side_effect=['2', '0', '0', '0']):
     system_instance.main_menu()
 
   # capture the output
