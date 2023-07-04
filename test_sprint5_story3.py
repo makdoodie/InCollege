@@ -143,9 +143,9 @@ def test_display_profile():
                     "Title: N/A",
                     f"About: {about}",
                     "About: N/A",
-                    f"University: {uni}",
+                    f"University: {uni.title()}",
                     "University: N/A",
-                    f"Degree: {major}",
+                    f"Degree: {major.title()}",
                     "Degree: N/A",
                     f"Years Attended: {years_attended}",
                     "Years Attended: N/A"
@@ -170,32 +170,44 @@ def test_display_profile():
     expi.add(f"{exp_fields[i]}: {exper.description}")
     expected_exp.append(expi) # append the expected output for the current experience to the list
 
-  # list of users with different profile states ranging from no profile to a full profile
-  users = [User(username, fName, lName),
-           User(username, fName, lName, Profile=profile()),
-           User(username, fName, lName, Profile=profile(headline)),
-           User(username, fName, lName, Profile=profile(about=about)),
-           User(username, fName, lName, Profile=profile(headline, education=edu)),
-           User(username, fName, lName, Profile=profile(about=about, education=edu)),
-           User(username, fName, lName, Profile=profile(headline, about, edu)),
-           User(username, fName, lName, Profile=profile(headline, about, edu, experiences[0:1])),
-           User(username, fName, lName, Profile=profile(headline, about, edu, experiences[0:2])),
-           User(username, fName, lName, Profile=profile(headline, about, edu, experiences)),]
+  # List of users with different profile states ranging from no profile to a full profile.
+  # Users are packed in tuples with the number of lines expected to be displayed in full mode for said user.
+  # This number refers to the number of lines expected to be matched from the expected_base and
+  # expected_exp sets, it does not include formatting lines matched by the regex below.
+  users = [(User(username, fName, lName), 2),
+           (User(username, fName, lName, Profile=profile()), 4),
+           (User(username, fName, lName, Profile=profile(headline)), 4),
+           (User(username, fName, lName, Profile=profile(about=about)), 4),
+           (User(username, fName, lName, Profile=profile(headline, education=edu)), 8),
+           (User(username, fName, lName, Profile=profile(about=about, education=edu)), 8),
+           (User(username, fName, lName, Profile=profile(headline, about, edu)), 8),
+           (User(username, fName, lName, Profile=profile(headline, about, edu, experiences[0:1])), 15),
+           (User(username, fName, lName, Profile=profile(headline, about, edu, experiences[0:2])), 22),
+           (User(username, fName, lName, Profile=profile(headline, about, edu, experiences)), 29),]
 
   # test the outputs of the partial and full profile displays for each user in the list
-  for user in users:
+  for user, num_lines in users:
     # partial profile display should only ever include the first and last name
     assert user.displayProfile('part') == f"Name: {fName} {lName}"
     # output of full profile display depends on the contents of the profile
-    result = user.displayProfile('full').split('\n')
+    result = [line.strip() for line in user.displayProfile('full').split('\n')]
     expected = expected_base
     # union the current user's experiences to the set of expected outputs
     if user.Profile and user.Profile.experiences and len(user.Profile.experiences):
       expected = expected | set.union(*expected_exp[0:len(user.Profile.experiences)])
-    # each line of the result should match one of the expected outputs or a formatting line matched by the regex
-    # the regex matches lines that exclusively contain 1 of the following options:
-    # no characters, only periods, only whitespaces, only hyphens
+    # create a dictionary from the set of expected output lines,
+    # key: line, value: number of lines matched in result (initially 0)
+    expected = dict.fromkeys(expected, 0)
+    # Each line of the result should match one of the expected outputs or a formatting line matched by the regex.
+    # The regex matches lines that exclusively contain 1 of the following options:
+    # no characters, only periods, only whitespaces, only hyphens.
     for line in result:
-      assert line in expected or re.match(r'^[\.]+$|^[\s]*$|^[-]+$|', line)
-
+      if line in expected:
+        # expected output lines should only be matched once per result
+        expected[line] += 1
+        assert line in expected and expected[line] == 1
+      else:
+        assert re.match(r'^[\.]+$|^[\s]*$|^[-]+$|', line)
+    # number of matching lines in result should equal the number of matches expected for the user
+    assert sum(expected.values()) == num_lines
   
