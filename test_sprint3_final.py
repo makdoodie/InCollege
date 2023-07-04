@@ -14,18 +14,38 @@ def system_instance():
 
 @pytest.fixture #removes existing accounts from db while testing
 def temp_remove_accounts(system_instance): 
-  system_instance.cursor.execute("SELECT * FROM accounts")
-  saved_accounts = system_instance.cursor.fetchall()
-  if len(saved_accounts) > 0:
+  """Sets up the database for testing by saving and clearing any persistent records, 
+  after a test finishes test records are cleared and saved records are restored."""
+  data = {}
+  # tables with FKs referencing other tables should come after the referenced table
+  tables = ['accounts', 'friends', 'experiences', 'jobs']
+  # store each of the tables into a dictionary
+  for table in tables:
+    system_instance.cursor.execute(f"SELECT * FROM {table}")
+    data[table] = system_instance.cursor.fetchall()
+
+  # delete all records from the the accounts table, 
+  # and should auto delete all records from tables with FK to accounts
+  if len(data[tables[0]]):
     system_instance.cursor.execute("DELETE FROM accounts")
     system_instance.conn.commit()
-  yield
-  system_instance.cursor.execute("DELETE FROM accounts")
-  if len(saved_accounts) > 0:
-    system_instance.cursor.executemany(
-      "INSERT INTO accounts (username, password, fName, lName,university,major) VALUES (?, ?, ?, ?,?,?)",
-      saved_accounts)
+  # delete all records from the jobs table
+  if len(data[tables[-1]]):
+    system_instance.cursor.execute("DELETE FROM jobs")
   system_instance.conn.commit()
+    
+  yield
+  # delete any testing records from the database 
+  system_instance.cursor.execute("DELETE FROM accounts")
+  # restore saved records to all tables 
+  for table in tables:
+    if len(data[table]):
+      # add a ? to the list of parameters for each column in the table
+      parameters = f"({','.join('?' for col in data[table][0])})"
+      query = f"INSERT INTO {table} VALUES {parameters}"
+      system_instance.cursor.executemany(query, data[table])
+  system_instance.conn.commit()
+
 
 @pytest.fixture
 def account_settings():
@@ -68,7 +88,7 @@ def test_notloggedin(system_instance, temp_remove_accounts, capsys): #tests that
   assert '[1] Sign Up' in output
 
 def test_loggedin(system_instance, name_register, capsys):  #tests that signing up is not an option from the general option in useful links to logged in users
-  input = ['1', 'ahmad', 'Asibai1$', '4', '1', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '5', '1', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -161,10 +181,11 @@ def test_guestnotloggedin(system_instance, temp_remove_accounts, capsys): #tests
     system_instance.home_page()
   captured = capsys.readouterr()
   output = captured.out.split('\n')
+  assert '[1] Guest Controls' not in output
   assert output[47] == '[0] Exit'
 
 def test_guestloggedin(system_instance, name_register, capsys):  #tests that guest controls can be accessed when a user is logged in
-  input = ['1', 'ahmad', 'Asibai1$', '5', '5', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '6', '5', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
@@ -172,7 +193,7 @@ def test_guestloggedin(system_instance, name_register, capsys):  #tests that gue
   assert '[1] Guest Controls' in output
 
 def test_controlsoff(system_instance, name_register, capsys):  #tests that guest controls are all off
-  input = ['1', 'ahmad', 'Asibai1$', '5', '5', '1', '1', '2', '3', '0', '0', '0', '0', '0']
+  input = ['1', 'ahmad', 'Asibai1$', '6', '5', '1', '1', '2', '3', '0', '0', '0', '0', '0']
   with mock.patch('builtins.input', side_effect=input):
     system_instance.home_page()
   captured = capsys.readouterr()
