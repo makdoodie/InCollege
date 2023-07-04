@@ -1,6 +1,7 @@
 from test_sprint5 import *
-from user import * # imports User, experience, education, and profile classes
+from user import User, experience, education, profile
 import inspect
+import re
 
 # a list of test users with the attributes necessary for registration
 TEST_USER = [ 
@@ -90,7 +91,7 @@ def test_integrated_check_profile(system_instance, clear_restore_db):
 
 def test_display_profile():
   """
-  Tests the output of the user's display profile function in both limited and full modes.
+  Tests the output of the user's display profile function in both partial and full modes.
   The test user information used in this function was generated with the assistance of ChatGPT.
   """
   # basic user info
@@ -102,6 +103,7 @@ def test_display_profile():
   uni, major, years_attended = 'University of Cambridge', 'Computer Science', 3
   edu = education(uni, major, years_attended)
   # experience 1 info
+  exp_fields = ['Title', 'Employer', 'Start Date', 'End Date', 'Location', 'Description']
   experiences = []
   exp = {'id': 1,
           'title': 'Software Engineering Intern',
@@ -132,20 +134,65 @@ def test_display_profile():
           'desc': """As a software development intern at ABC Software Solutions, I had the opportunity to work on a cross-functional team to develop and test software applications. I assisted in the implementation of new features, performed software testing and debugging, and collaborated with designers and product managers to ensure smooth functionality and user experience. This experience allowed me to deepen my understanding of the software development lifecycle and refine my coding and problem-solving skills."""
         }
   experiences.append(experience(exp['id'], exp['title'], exp['emp'], exp['start'], exp['end'], exp['loc'], exp['desc']))
-  # initialize a complete user profile
-  full_profile = profile(headline, about, edu, experiences)
-  # test display for a user with no profile
-  user = User(username, fName, lName)
-  # assert user.displayProfile('part') == f"Name: {fName} {lName}"
-  # assert user.displayProfile('full') == f"Name: {fName} {lName}"
-  # test display for a user with empty profile
-  user = User(username, fName, lName, Profile=profile())
-  # assert user.displayProfile('part') == f"Name: {fName} {lName}"
-  # assert user.displayProfile('full') == f"Name: {fName} {lName}"
-  # test display for a user with complete profile
-  user = User(username, fName, lName, Profile=full_profile)
-  # assert user.displayProfile('part') == f"Name: {fName} {lName}"
-  # assert user.displayProfile('full') == f"Name: {fName} {lName}"
-  print(user.displayProfile('full'))
+  # setup the expected output starting with base fields that will be displayed in every user profile
+  # note: the user is not required to enter all of these fields so some may be N/A
+  expected_base = {"Viewing Profile",
+                    "Education",
+                    f"Name: {fName} {lName}",
+                    f"Title: {headline}",
+                    "Title: N/A",
+                    f"About: {about}",
+                    "About: N/A",
+                    f"University: {uni}",
+                    "University: N/A",
+                    f"Degree: {major}",
+                    "Degree: N/A",
+                    f"Years Attended: {years_attended}",
+                    "Years Attended: N/A"
+}
+  # setup the expected experiences output for each of the 3 experiences
+  expected_exp = [] # list of 3 sets, 1 for each of the experiences above
+  for n, exper in enumerate(experiences, start=1):
+    expi = set() # holds output for each attribute of the current experience
+    # add the expected output for each attribute to the set
+    expi.add(f"Experience {n}")
+    i = 0
+    expi.add(f"{exp_fields[i]}: {exper.title}")
+    i = i + 1
+    expi.add(f"{exp_fields[i]}: {exper.employer}")
+    i = i + 1
+    expi.add(f"{exp_fields[i]}: {exper.startDate}")
+    i = i + 1
+    expi.add(f"{exp_fields[i]}: {exper.endDate}")
+    i = i + 1
+    expi.add(f"{exp_fields[i]}: {exper.location}")
+    i = i + 1
+    expi.add(f"{exp_fields[i]}: {exper.description}")
+    expected_exp.append(expi) # append the expected output for the current experience to the list
+
+  # list of users with different profile states ranging from no profile to a full profile
+  users = [User(username, fName, lName),
+           User(username, fName, lName, Profile=profile(headline, education=edu)),
+           User(username, fName, lName, Profile=profile(about=about, education=edu)),
+           User(username, fName, lName, Profile=profile(headline, about, edu)),
+           User(username, fName, lName, Profile=profile(headline, about, edu, experiences[0:1])),
+           User(username, fName, lName, Profile=profile(headline, about, edu, experiences[0:2])),
+           User(username, fName, lName, Profile=profile(headline, about, edu, experiences)),]
+
+  # test the outputs of the partial and full profile displays for each user in the list
+  for user in users:
+    # partial profile display should only ever include the first and last name
+    assert user.displayProfile('part') == f"Name: {fName} {lName}"
+    # output of full profile display depends on the contents of the profile
+    result = user.displayProfile('full').split('\n')
+    expected = expected_base
+    # union the current user's experiences to the set of expected outputs
+    if user.Profile and user.Profile.experiences and len(user.Profile.experiences):
+      expected = expected | set.union(*expected_exp[0:len(user.Profile.experiences)])
+    # each line of the result should match one of the expected outputs or a formatting line matched by the regex
+    # the regex matches lines that exclusively contain 1 of the following options:
+    # no characters, only periods, only whitespaces, only hyphens
+    for line in result:
+      assert line in expected or re.match(r'^[\.]+$|^[\s]*$|^[-]+$|', line)
 
   
