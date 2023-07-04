@@ -55,18 +55,18 @@ def test_user_profile_attr():
   assert minimal_user.Profile is None
 
 
-def test_basic_check_profile():
-  """Checks that boolean checkProfile function of the user class 
+def test_basic_has_profile():
+  """Checks that boolean hasProfile function of the user class 
   returns true for users with a profile and false for users without one."""
   # setup users with and without a profile and test checkprofile function
   minimal_user = User('user1', 'firstname', 'lastname')
   profile_user = User('user2', 'firstname', 'lastname', Profile=profile())
-  assert minimal_user.checkProfile() == False
-  assert profile_user.checkProfile() == True
+  assert minimal_user.hasProfile() == False
+  assert profile_user.hasProfile() == True
 
 
-def test_integrated_check_profile(system_instance, clear_restore_db):
-  """Checks that user's check profile function operates correctly during a simulated user interaction"""
+def test_integrated_has_profile(system_instance, clear_restore_db):
+  """Checks that user's has profile function operates correctly during a simulated user interaction"""
   # register a user in the system
   inputs = TEST_USER[0]
   inputs.append(TEST_USER[0][-1]) # duplicate password  for pass check input
@@ -77,16 +77,16 @@ def test_integrated_check_profile(system_instance, clear_restore_db):
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.login()
   # check that new test user does not have profile
-  assert system_instance.user.checkProfile() == False
+  assert system_instance.user.hasProfile() == False
   # trigger the user profile menu and select to create profile
   inputs = ['1','0','0']
   with mock.patch('builtins.input', side_effect=inputs):
     system_instance.user_profile_menu()
   # check that the user now has a profile
-  system_instance.user.checkProfile() == True
+  system_instance.user.hasProfile() == True
   # ensure the profile is cleaned up on logout
   system_instance.user.logout()
-  system_instance.user.checkProfile() == False
+  system_instance.user.hasProfile() == False
 
 
 def test_display_profile():
