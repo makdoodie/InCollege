@@ -172,6 +172,9 @@ def test_display_profile():
 
   # list of users with different profile states ranging from no profile to a full profile
   users = [User(username, fName, lName),
+           User(username, fName, lName, Profile=profile()),
+           User(username, fName, lName, Profile=profile(headline)),
+           User(username, fName, lName, Profile=profile(about=about)),
            User(username, fName, lName, Profile=profile(headline, education=edu)),
            User(username, fName, lName, Profile=profile(about=about, education=edu)),
            User(username, fName, lName, Profile=profile(headline, about, edu)),
