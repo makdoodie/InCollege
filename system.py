@@ -2057,7 +2057,7 @@ class System:
         # list comprehension to create exp as a list
         experiences = [row[6:] for row in userProfile]
         userExperiences = []
-        if not(len(experiences) == 1 and all(e is None for e in experiences)):
+        if not(len(experiences) == 1 and and experiences[0][0] is None):
           for exp in experiences:
             userExperiences.append(experience(ID=exp[0],
                                    title=exp[1],
