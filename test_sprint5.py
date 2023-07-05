@@ -822,3 +822,11 @@ def test_loadacceptedfriends(system_instance, clear_restore_db, capsys, name_reg
     assert makdoodie.Profile.headline == "Software Engineer Intern"
     assert makdoodie.Profile.about == "Just a bit about me"
     assert makdoodie.Profile.education.yearsAttended == 5
+
+
+# ============================================== Story 7 Tests ===================================================
+
+def test_title_case(system_instance, name_register):
+  result = system_instance.cursor.execute("SELECT university FROM accounts")
+  result = system_instance.cursor.fetchone()
+  assert result[0] == 'Usf', "usf does not have a capital U"
