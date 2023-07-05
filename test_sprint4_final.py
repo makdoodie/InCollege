@@ -35,7 +35,7 @@ def temp_remove_accounts(system_instance):
     system_instance.cursor.execute("DELETE FROM jobs")
   system_instance.conn.commit()
     
-  '''yield
+  yield
   # delete any testing records from the database 
   system_instance.cursor.execute("DELETE FROM accounts")
   system_instance.cursor.execute("DELETE FROM jobs")
@@ -46,7 +46,7 @@ def temp_remove_accounts(system_instance):
       parameters = f"({','.join('?' for col in data[table][0])})"
       query = f"INSERT INTO {table} VALUES {parameters}"
       system_instance.cursor.executemany(query, data[table])
-  system_instance.conn.commit()'''
+  system_instance.conn.commit()
 
 
 @pytest.fixture #test that user can input first and last name when registering
