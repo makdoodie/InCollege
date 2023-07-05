@@ -758,7 +758,7 @@ def test_view_friend(system_instance, clear_restore_db, capsys, name_register ,n
   assert output[56] == 'About: Just a bit about me'
   assert output[63] == ' Years Attended: 5'
   #Makes sure exit will take you back to the previous menu
-  assert output[78] == 'Exiting'
+  assert output[77] == 'Exiting'
 
 
 # ============================================= Story 6 Tests ======================================================
