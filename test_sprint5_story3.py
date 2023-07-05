@@ -136,19 +136,14 @@ def test_display_profile():
   experiences.append(experience(exp['id'], exp['title'], exp['emp'], exp['start'], exp['end'], exp['loc'], exp['desc']))
   # setup the expected output starting with base fields that will be displayed in every user profile
   # note: the user is not required to enter all of these fields so some may be N/A
-  expected_base = {"Viewing Profile",
-                    "Education",
+  expected_base = lambda user: {"Viewing Profile",
+                    *({"Education"} if user.Profile and user.Profile.education else set()),
                     f"Name: {fName} {lName}",
-                    f"Title: {headline}",
-                    "Title: N/A",
-                    f"About: {about}",
-                    "About: N/A",
-                    f"University: {uni.title()}",
-                    "University: N/A",
-                    f"Degree: {major.title()}",
-                    "Degree: N/A",
-                    f"Years Attended: {years_attended}",
-                    "Years Attended: N/A"
+                    *({f"Title: {headline if user.Profile.headline else 'N/A'}"} if user.Profile else set()),
+                    *({f"About: {about if user.Profile.about else 'N/A'}"} if user.Profile else set()),
+                    *({f"University: {uni.title() if user.Profile.education.university else 'N/A'}"} if user.Profile and user.Profile.education else set()),
+                    *({f"Degree: {major.title() if user.Profile.education.major else 'N/A'}"} if user.Profile and user.Profile.education else set()),
+                    *({f"Years Attended: {years_attended if user.Profile.education.yearsAttended else 'N/A'}"} if user.Profile and user.Profile.education else set())
 }
   # setup the expected experiences output for each of the 3 experiences
   expected_exp = [] # list of 3 sets, 1 for each of the experiences above
@@ -191,7 +186,7 @@ def test_display_profile():
     assert user.displayProfile('part') == f"Name: {fName} {lName}"
     # output of full profile display depends on the contents of the profile
     result = [line.strip() for line in user.displayProfile('full').split('\n')]
-    expected = expected_base
+    expected = expected_base(user)
     # union the current user's experiences to the set of expected outputs
     if user.Profile and user.Profile.experiences and len(user.Profile.experiences):
       expected = expected | set.union(*expected_exp[0:len(user.Profile.experiences)])
