@@ -496,7 +496,7 @@ class System:
 
     self.displayFriendInfo.addItem("View Profile", 
                                    lambda: self.view_friend_profile(friend), 
-                                   lambda: friend.hasProfile())
+                                   lambda: True if friend.hasProfile() and friend.userName in self.user.acceptedRequests else False )
      # provide an option to disconnect from selected connection
     self.displayFriendInfo.addItem("Disconnect", 
                                    lambda: self.disconnectFriend(friend), 
