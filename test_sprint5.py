@@ -92,7 +92,7 @@ def test_instance_1():
     return system
 
 
-#================================================ Story 1 ========================================================
+#============================================== Story 1 Tests ======================================================
 
 def test_accounts_schema(system_instance):
   # retreive experiences table schema from database
