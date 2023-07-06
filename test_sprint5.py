@@ -496,7 +496,14 @@ def test_profile_friend_name_menu_name_only(test_instance_1,capsys):
   captured = capsys.readouterr()
   output = captured.out
   assert "Name: Test Test" in output
-
+def test_profile_friend_name_search_name_only(test_instance_1,capsys):  
+  #tests that name only shows in the friend search
+  input = ['3','1','1','Away','1','0','0','0','0','0']
+  with mock.patch('builtins.input', side_effect=input):
+    test_instance_1.home_page()
+  captured = capsys.readouterr()
+  output = captured.out
+  assert "Name: Testing Away" in output
 
 def test_profile_friend_pending_menu_name_only(test_instance_1,capsys):  
   #tests that signing up is not an option from the general option in useful links to logged in users
